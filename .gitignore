@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+.venv/
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# generated data
+/public/data/*.json
+/public/figures/*/
+
+# extracted figures for inspection
+/extracted_figures/
