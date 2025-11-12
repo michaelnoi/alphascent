@@ -1,60 +1,160 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { PapersData } from '@/app/lib/schema';
-import { PaperCard } from '@/app/components/PaperCard';
-import { Filters } from '@/app/components/Filters';
+import { useState, useEffect, useCallback } from 'react';
+import { PaperCard, type PaperFromAPI } from '@/app/components/PaperCard';
+import { SearchBar } from '@/app/components/SearchBar';
+import { DatePicker } from '@/app/components/DatePicker';
 import { useKeyboardNav } from '@/app/components/useKeyboardNav';
 
+interface DateInfo {
+  date: string;
+  count: number;
+}
+
+interface PapersResponse {
+  papers: PaperFromAPI[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+  filters: {
+    date?: string;
+    from?: string;
+    to?: string;
+    search?: string;
+    searchScope?: string;
+  };
+}
+
 export default function CVPage() {
-  const [data, setData] = useState<PapersData | null>(null);
+  const [papers, setPapers] = useState<PaperFromAPI[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterQuery, setFilterQuery] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
+  
+  const [availableDates, setAvailableDates] = useState<DateInfo[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchScope, setSearchScope] = useState<'all' | 'current'>('all');
+  
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 100,
+    total: 0,
+    hasMore: false,
+  });
+
+  const activeIndex = useKeyboardNav(papers.length);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadDates() {
       try {
-        const today = new Date();
-        const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        
-        const res = await fetch(`/data/papers-${dateStr}.json`);
-        
-        if (!res.ok) {
-          throw new Error(`Failed to load papers: ${res.status}`);
+        const res = await fetch('/api/dates');
+        if (!res.ok) throw new Error('Failed to fetch dates');
+        const data = await res.json();
+        setAvailableDates(data.dates);
+        if (data.dates.length > 0 && !selectedDate && !dateRange) {
+          setSelectedDate(data.dates[0].date);
         }
-        
-        const papersData: PapersData = await res.json();
-        setData(papersData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load papers');
-      } finally {
-        setLoading(false);
+        console.error('Error loading dates:', err);
       }
     }
-
-    loadData();
+    loadDates();
   }, []);
 
-  const filteredPapers = useMemo(() => {
-    if (!data) return [];
-    if (!filterQuery.trim()) return data.papers;
+  const fetchPapers = useCallback(async (page: number = 1, append: boolean = false) => {
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString(),
+      });
 
-    const query = filterQuery.toLowerCase();
-    return data.papers.filter(paper => 
-      paper.title.toLowerCase().includes(query) ||
-      paper.abstract.toLowerCase().includes(query) ||
-      paper.authors.some(author => author.toLowerCase().includes(query))
-    );
-  }, [data, filterQuery]);
+      if (searchQuery) {
+        params.set('search', searchQuery);
+        params.set('searchScope', searchScope);
+      }
 
-  const activeIndex = useKeyboardNav(filteredPapers.length);
+      if (dateRange) {
+        params.set('from', dateRange.from);
+        params.set('to', dateRange.to);
+      } else if (selectedDate) {
+        params.set('date', selectedDate);
+      }
 
-  const handleFilterChange = useCallback((query: string) => {
-    setFilterQuery(query);
+      const res = await fetch(`/api/papers?${params}`);
+      if (!res.ok) throw new Error(`Failed to fetch papers: ${res.status}`);
+      
+      const data: PapersResponse = await res.json();
+      
+      if (append) {
+        setPapers(prev => [...prev, ...data.papers]);
+      } else {
+        setPapers(data.papers);
+      }
+      
+      setPagination(data.pagination);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load papers');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [selectedDate, dateRange, searchQuery, searchScope, pagination.limit]);
+
+  useEffect(() => {
+    if (selectedDate || dateRange) {
+      fetchPapers(1, false);
+    }
+  }, [selectedDate, dateRange, searchQuery, searchScope]);
+
+  const handleSearchChange = useCallback((query: string, scope: 'all' | 'current') => {
+    setSearchQuery(query);
+    setSearchScope(scope);
   }, []);
 
-  if (loading) {
+  const handleDateSelect = useCallback((date: string | null) => {
+    setSelectedDate(date);
+    setDateRange(null);
+  }, []);
+
+  const handleDateRangeSelect = useCallback((from: string, to: string) => {
+    setDateRange({ from, to });
+    setSelectedDate(null);
+  }, []);
+
+  const handleLoadMore = useCallback(() => {
+    if (pagination.hasMore && !loadingMore) {
+      fetchPapers(pagination.page + 1, true);
+    }
+  }, [pagination, loadingMore, fetchPapers]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'M' && e.shiftKey) {
+        e.preventDefault();
+        handleLoadMore();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleLoadMore]);
+
+  const progressPercent = papers.length > 0 ? Math.round(((activeIndex + 1) / papers.length) * 100) : 0;
+
+  if (loading && papers.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -65,7 +165,7 @@ export default function CVPage() {
     );
   }
 
-  if (error) {
+  if (error && papers.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
@@ -75,30 +175,17 @@ export default function CVPage() {
             </svg>
           </div>
           <div className="text-base font-semibold text-gray-900 mb-2">Error loading papers</div>
-          <div className="text-sm text-gray-600 mb-4">{error}</div>
-          <div className="text-xs text-gray-500">
-            Run: <code className="bg-indigo-50 px-2 py-1 rounded border border-indigo-200 font-mono">make scrape</code>
-          </div>
+          <div className="text-sm text-gray-600">{error}</div>
         </div>
       </div>
     );
   }
 
-  if (!data) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-sm text-gray-400">No data available</div>
-      </div>
-    );
-  }
-
-  const progressPercent = filteredPapers.length > 0 ? Math.round(((activeIndex + 1) / filteredPapers.length) * 100) : 0;
-
   return (
     <div className="min-h-screen">
       <div className="sticky top-0 z-50 bg-[#fffaf3]/95 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
         <div className="max-w-6xl mx-auto px-8 py-4">
-          <div className="flex items-center justify-between gap-6">
+          <div className="flex items-center justify-between gap-6 mb-3">
             <div className="flex items-center gap-6">
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
@@ -106,29 +193,38 @@ export default function CVPage() {
                 </h1>
                 <p className="text-xs text-gray-500 flex items-center gap-2">
                   <span className="inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                  cs.CV papers · {data.date}
+                  cs.CV papers
                 </p>
               </div>
               
               <div className="flex items-center gap-1 text-xs text-gray-600 bg-white/70 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-2">
                 <span className="font-medium">{activeIndex + 1}</span>
                 <span className="text-gray-400">/</span>
-                <span>{filteredPapers.length}</span>
+                <span>{papers.length}</span>
                 <span className="text-gray-400 ml-1">({progressPercent}%)</span>
+                {pagination.total > papers.length && (
+                  <>
+                    <span className="text-gray-400 ml-1">of</span>
+                    <span className="font-medium ml-1">{pagination.total}</span>
+                  </>
+                )}
               </div>
             </div>
             
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <DatePicker
+                availableDates={availableDates}
+                selectedDate={selectedDate}
+                dateRange={dateRange}
+                onDateSelect={handleDateSelect}
+                onDateRangeSelect={handleDateRangeSelect}
+              />
+
               <div className="text-xs bg-white/70 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">⌘F</kbd>
                     <span className="text-gray-500 text-[10px]">search</span>
-                  </div>
-                  <div className="w-px h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">↵</kbd>
-                    <span className="text-gray-500 text-[10px]">exit search</span>
                   </div>
                   <div className="w-px h-4 bg-gray-300"></div>
                   <div className="flex items-center gap-2">
@@ -143,28 +239,19 @@ export default function CVPage() {
                   </div>
                   <div className="w-px h-4 bg-gray-300"></div>
                   <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">u</kbd>
-                    <span className="text-gray-500 text-[10px]">abstract</span>
-                  </div>
-                  <div className="w-px h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">i</kbd>
-                    <span className="text-gray-500 text-[10px]">pdf</span>
-                  </div>
-                  <div className="w-px h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">o</kbd>
-                    <span className="text-gray-500 text-[10px]">code</span>
-                  </div>
-                  <div className="w-px h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">p</kbd>
-                    <span className="text-gray-500 text-[10px]">project</span>
+                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">⇧M</kbd>
+                    <span className="text-gray-500 text-[10px]">load more</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          
+          <SearchBar
+            onSearchChange={handleSearchChange}
+            initialQuery={searchQuery}
+            initialScope={searchScope}
+          />
           
           <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
             <div 
@@ -176,27 +263,44 @@ export default function CVPage() {
       </div>
       
       <div className="max-w-6xl mx-auto px-8 py-8">
-
-        <Filters 
-          onFilterChange={handleFilterChange}
-          resultCount={filteredPapers.length}
-          totalCount={data.papers.length}
-        />
-
-        {filteredPapers.length === 0 ? (
+        {papers.length === 0 ? (
           <div className="text-center py-20 text-gray-400 text-sm">
-            No papers match your filter
+            No papers found
           </div>
         ) : (
-          <div>
-            {filteredPapers.map((paper, index) => (
-              <PaperCard 
-                key={paper.id} 
-                paper={paper}
-                isActive={index === activeIndex}
-              />
-            ))}
-          </div>
+          <>
+            <div>
+              {papers.map((paper, index) => (
+                <PaperCard 
+                  key={paper.id} 
+                  paper={paper}
+                  isActive={index === activeIndex}
+                />
+              ))}
+            </div>
+
+            {pagination.hasMore && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  {loadingMore ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Loading...
+                    </span>
+                  ) : (
+                    <span>Load More ({pagination.total - papers.length} remaining)</span>
+                  )}
+                </button>
+                <div className="mt-2 text-xs text-gray-500">
+                  or press <kbd className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">Shift+M</kbd>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <footer className="mt-16 pt-6 border-t border-gray-200 text-center text-xs text-gray-400">
@@ -206,4 +310,3 @@ export default function CVPage() {
     </div>
   );
 }
-

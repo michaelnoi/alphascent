@@ -1,12 +1,33 @@
 'use client';
 
-import { Paper } from '@/app/lib/schema';
 import { useState, useRef, useEffect } from 'react';
 import { FileText, File, Code2, Globe } from 'lucide-react';
 import Image from 'next/image';
 
+export interface PaperFromAPI {
+  id: string;
+  title: string;
+  authors: string[];
+  categories: string[];
+  primary_category: string | null;
+  abstract: string | null;
+  published_date: string | null;
+  scraped_date: string;
+  pdf_url: string | null;
+  code_url: string | null;
+  project_url: string | null;
+  comments: string | null;
+  figures: Array<{
+    kind: string;
+    url: string;
+    thumb: string | null;
+    width: number | null;
+    height: number | null;
+  }>;
+}
+
 interface PaperCardProps {
-  paper: Paper;
+  paper: PaperFromAPI;
   isActive?: boolean;
   onCardClick?: () => void;
 }
@@ -41,35 +62,38 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
     if (e.key === ' ') {
       e.preventDefault();
       setIsExpanded(!isExpanded);
-    } else if (e.key.toLowerCase() === 'u') {
+    } else if (e.key.toLowerCase() === 'u' && paper.pdf_url) {
       e.preventDefault();
-      openLink(paper.links.abs, e.shiftKey);
-    } else if (e.key.toLowerCase() === 'i') {
+      openLink(paper.pdf_url.replace('/pdf/', '/abs/'), e.shiftKey);
+    } else if (e.key.toLowerCase() === 'i' && paper.pdf_url) {
       e.preventDefault();
-      openLink(paper.links.pdf, e.shiftKey);
-    } else if (e.key.toLowerCase() === 'o' && paper.links.code) {
+      openLink(paper.pdf_url, e.shiftKey);
+    } else if (e.key.toLowerCase() === 'o' && paper.code_url) {
       e.preventDefault();
-      openLink(paper.links.code, e.shiftKey);
-    } else if (e.key.toLowerCase() === 'p' && paper.links.project_page) {
+      openLink(paper.code_url, e.shiftKey);
+    } else if (e.key.toLowerCase() === 'p' && paper.project_url) {
       e.preventDefault();
-      openLink(paper.links.project_page, e.shiftKey);
+      openLink(paper.project_url, e.shiftKey);
     }
   };
 
   const displayAuthors = paper.authors.slice(0, 3);
   const remainingAuthors = paper.authors.length - 3;
 
-  const abstractPreview = paper.abstract.split('.')[0] + '.';
+  const abstractPreview = paper.abstract?.split('.')[0] + '.' || '';
+  const teaserFigure = paper.figures.find(f => f.kind === 'teaser');
+  const architectureFigure = paper.figures.find(f => f.kind === 'architecture');
+  const absUrl = paper.pdf_url?.replace('/pdf/', '/abs/') || '';
 
   if (isExpanded) {
     return (
-        <div
-          ref={cardRef}
-          className={`
-            border rounded-xl mb-3 cursor-pointer transition-all duration-200 shadow-sm
-            hover:shadow-md overflow-hidden scroll-mt-20
-            ${isActive ? 'ring-4 ring-indigo-500 border-indigo-400 shadow-xl bg-orange-50/60 scale-[1.04]' : 'border-gray-200'}
-          `}
+      <div
+        ref={cardRef}
+        className={`
+          border rounded-xl mb-3 cursor-pointer transition-all duration-200 shadow-sm
+          hover:shadow-md overflow-hidden scroll-mt-20
+          ${isActive ? 'ring-4 ring-indigo-500 border-indigo-400 shadow-xl bg-orange-50/60 scale-[1.04]' : 'border-gray-200'}
+        `}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
@@ -79,9 +103,9 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
         <div className="p-6 h-[75vh] flex flex-col overflow-hidden bg-orange-50/40">
           <div className="flex gap-6 flex-shrink-0 mb-4 pb-4 border-b border-indigo-100/30">
             <div className="w-48 h-36 bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100/50 rounded-xl flex-shrink-0 flex items-center justify-center shadow-inner overflow-hidden">
-              {paper.links.figures?.teaser ? (
+              {teaserFigure?.thumb ? (
                 <Image 
-                  src={paper.links.figures.teaser.thumb} 
+                  src={teaserFigure.thumb} 
                   alt="Teaser preview"
                   width={200}
                   height={150}
@@ -98,7 +122,7 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-2xl mb-3 leading-tight text-gray-900 break-words">
                 <a
-                  href={paper.links.abs}
+                  href={absUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-indigo-600 transition-colors"
@@ -112,83 +136,72 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
                 {paper.authors.join(', ')}
               </div>
 
-              <div className="flex flex-wrap items-center mb-3">
-                <div className="flex flex-wrap gap-1.5 flex-shrink-0 mr-6">
-                {paper.categories.map((cat, idx) => (
-                  <span
-                    key={idx}
-                    className={`
-                      text-xs px-2.5 py-1 rounded-md font-medium
-                      ${cat === paper.primary_category 
-                        ? 'bg-indigo-100 text-indigo-700' 
-                        : 'bg-gray-100 text-gray-600'
-                      }
-                    `}
-                  >
-                    {cat}
-                  </span>
-                ))}
-                </div>
-                
-                <div className="flex flex-shrink-0 gap-0">
+              <div className="flex flex-shrink-0 gap-0">
+                {absUrl && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(paper.links.abs, '_blank');
+                      window.open(absUrl, '_blank');
                     }}
                     className="rounded-l-md border border-gray-200 px-5 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none inline-flex items-center gap-3 text-sm"
                   >
                     <FileText className="w-4 h-4" />
                     <span>Abstract</span>
                   </button>
+                )}
+                {paper.pdf_url && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(paper.links.pdf, '_blank');
+                      window.open(paper.pdf_url!, '_blank');
                     }}
-                    className={`-ml-px border border-gray-200 px-5 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none inline-flex items-center gap-3 text-sm ${!paper.links.code && !paper.links.project_page ? 'rounded-r-md' : ''}`}
+                    className={`-ml-px border border-gray-200 px-5 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none inline-flex items-center gap-3 text-sm ${!paper.code_url && !paper.project_url ? 'rounded-r-md' : ''}`}
                   >
                     <File className="w-4 h-4" />
                     <span>PDF</span>
                   </button>
-                  {paper.links.code && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(paper.links.code, '_blank');
-                      }}
-                      className={`-ml-px border border-gray-200 px-5 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none inline-flex items-center gap-3 text-sm ${!paper.links.project_page ? 'rounded-r-md' : ''}`}
-                    >
-                      <Code2 className="w-4 h-4" />
-                      <span>Code</span>
-                    </button>
-                  )}
-                  {paper.links.project_page && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(paper.links.project_page, '_blank');
-                      }}
-                      className="-ml-px rounded-r-md border border-gray-200 px-5 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none inline-flex items-center gap-3 text-sm"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>Project</span>
-                    </button>
-                  )}
-                </div>
+                )}
+                {paper.code_url && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(paper.code_url!, '_blank');
+                    }}
+                    className={`-ml-px border border-gray-200 px-5 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none inline-flex items-center gap-3 text-sm ${!paper.project_url ? 'rounded-r-md' : ''}`}
+                  >
+                    <Code2 className="w-4 h-4" />
+                    <span>Code</span>
+                  </button>
+                )}
+                {paper.project_url && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(paper.project_url!, '_blank');
+                    }}
+                    className="-ml-px rounded-r-md border border-gray-200 px-5 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus:z-10 focus:ring-2 focus:ring-blue-500 focus:outline-none inline-flex items-center gap-3 text-sm"
+                  >
+                    <Globe className="w-4 h-4" />
+                    <span>Project</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto min-h-0 mb-4 overflow-x-hidden">
-            {(paper.links.figures?.teaser || paper.links.figures?.architecture) && (
+            <p className="text-[15px] text-gray-700 leading-relaxed mb-5 font-serif-abstract break-words">
+              {paper.abstract}
+            </p>
+
+            {(teaserFigure || architectureFigure) && (
               <div className="mb-5">
                 <h4 className="text-sm font-medium text-gray-700 mb-3">Figures</h4>
-                <div className={`grid gap-4 ${paper.links.figures.teaser && paper.links.figures.architecture ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                  {paper.links.figures.teaser && (
+                <div className={`grid gap-4 ${teaserFigure && architectureFigure ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {teaserFigure && (
                     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                       <Image 
-                        src={paper.links.figures.teaser.full} 
+                        src={teaserFigure.url} 
                         alt="Method teaser"
                         width={800}
                         height={600}
@@ -200,10 +213,10 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
                       </div>
                     </div>
                   )}
-                  {paper.links.figures.architecture && (
+                  {architectureFigure && (
                     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                       <Image 
-                        src={paper.links.figures.architecture.full} 
+                        src={architectureFigure.url} 
                         alt="Architecture diagram"
                         width={800}
                         height={600}
@@ -218,10 +231,6 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
                 </div>
               </div>
             )}
-            
-            <p className="text-[15px] text-gray-700 leading-relaxed mb-4 font-serif-abstract break-words">
-              {paper.abstract}
-            </p>
 
             {paper.comments && (
               <div className="text-sm text-gray-600 italic bg-amber-50/50 border border-amber-100/50 rounded-xl p-3.5 shadow-sm break-words">
@@ -250,9 +259,9 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
     >
       <div className="flex gap-4">
         <div className="w-20 h-16 bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100/50 rounded-lg flex-shrink-0 flex items-center justify-center shadow-sm overflow-hidden">
-          {paper.links.figures?.teaser ? (
+          {teaserFigure?.thumb ? (
             <Image 
-              src={paper.links.figures.teaser.thumb} 
+              src={teaserFigure.thumb} 
               alt="Teaser preview"
               width={200}
               height={150}
@@ -266,10 +275,10 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
           )}
         </div>
 
-          <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-lg leading-snug mb-2 text-gray-900">
             <a
-              href={paper.links.abs}
+              href={absUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-indigo-600 transition-colors"
@@ -286,23 +295,6 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
             )}
           </div>
 
-          <div className="flex flex-wrap gap-1.5 mb-2.5">
-            {paper.categories.slice(0, 4).map((cat, idx) => (
-              <span
-                key={idx}
-                className={`
-                  text-xs px-2.5 py-0.5 rounded-md font-medium
-                  ${cat === paper.primary_category 
-                    ? 'bg-indigo-100 text-indigo-700' 
-                    : 'bg-gray-100 text-gray-600'
-                  }
-                `}
-              >
-                {cat}
-              </span>
-            ))}
-          </div>
-
           <p className="text-[13px] text-gray-600 line-clamp-2 leading-relaxed font-serif-abstract">
             {abstractPreview}
           </p>
@@ -311,4 +303,3 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
     </div>
   );
 }
-
