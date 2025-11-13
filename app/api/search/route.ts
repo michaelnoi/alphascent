@@ -10,7 +10,7 @@ interface SearchResponse {
     title: string;
     authors: string[];
     abstract: string | null;
-    scraped_date: string;
+    recentview_date: string;
     rank: number;
   }>;
   query: string;
@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
       for (const range of accessibleDates) {
         if (range.includes(':')) {
           const [start, end] = range.split(':');
-          dateAccessConditions.push('(papers.scraped_date >= ? AND papers.scraped_date <= ?)');
+          dateAccessConditions.push('(papers.recentview_date >= ? AND papers.recentview_date <= ?)');
           bindings.push(start, end);
         } else {
-          dateAccessConditions.push('papers.scraped_date = ?');
+          dateAccessConditions.push('papers.recentview_date = ?');
           bindings.push(range);
         }
       }
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         papers.title,
         papers.authors,
         papers.abstract,
-        papers.scraped_date,
+        papers.recentview_date,
         papers_fts.rank
       FROM papers_fts
       JOIN papers ON papers.id = papers_fts.paper_id
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       title: paper.title,
       authors: JSON.parse(paper.authors),
       abstract: paper.abstract,
-      scraped_date: paper.scraped_date,
+      recentview_date: paper.recentview_date,
       rank: paper.rank,
     }));
 

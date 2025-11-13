@@ -130,6 +130,7 @@ export interface Paper {
   primary_category: string | null;
   abstract: string | null;
   published_date: string | null;
+  recentview_date: string;
   scraped_date: string;
   pdf_url: string | null;
   code_url: string | null;

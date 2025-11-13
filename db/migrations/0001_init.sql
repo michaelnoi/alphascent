@@ -11,8 +11,9 @@ CREATE TABLE papers (
   categories TEXT NOT NULL,              -- JSON array as text, e.g. ["cs.CV", "cs.AI"]
   primary_category TEXT,
   abstract TEXT,
-  published_date TEXT,                   -- YYYY-MM-DD format
-  scraped_date TEXT NOT NULL,            -- YYYY-MM-DD format (used for date-based access control)
+  published_date TEXT,                   -- YYYY-MM-DD format (arXiv submission date, stored but not used for filtering)
+  recentview_date TEXT NOT NULL,         -- YYYY-MM-DD format (date paper appeared on arxiv.org/list/cs.CV/recent)
+  scraped_date TEXT NOT NULL,            -- YYYY-MM-DD format (when pipeline actually fetched this paper)
   pdf_url TEXT,
   code_url TEXT,
   project_url TEXT,
@@ -20,8 +21,8 @@ CREATE TABLE papers (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_papers_recentview ON papers(recentview_date DESC);
 CREATE INDEX idx_papers_scraped ON papers(scraped_date DESC);
-CREATE INDEX idx_papers_published ON papers(published_date DESC);
 CREATE INDEX idx_papers_primary_category ON papers(primary_category);
 
 -- ============================================================================

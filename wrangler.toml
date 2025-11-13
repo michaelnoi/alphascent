@@ -6,7 +6,7 @@ account_id = "eb64f142b2b48149d5157930abe27b76"
 [[d1_databases]]
 binding = "DB"
 database_name = "alphascent-db"
-database_id = "60a21eba-3458-43ae-a34b-d2d028d5b0a0"
+database_id = "f67b4f87-052f-49d0-b4bf-35c76df3f1b1"
 
 # R2 Storage binding
 [[r2_buckets]]
