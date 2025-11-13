@@ -10,7 +10,7 @@ interface SearchResponse {
     title: string;
     authors: string[];
     abstract: string | null;
-    recentview_date: string;
+    submitted_date: string;
     rank: number;
   }>;
   query: string;
@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
       for (const range of accessibleDates) {
         if (range.includes(':')) {
           const [start, end] = range.split(':');
-          dateAccessConditions.push('(papers.recentview_date >= ? AND papers.recentview_date <= ?)');
+          dateAccessConditions.push('(papers.submitted_date >= ? AND papers.submitted_date <= ?)');
           bindings.push(start, end);
         } else {
-          dateAccessConditions.push('papers.recentview_date = ?');
+          dateAccessConditions.push('papers.submitted_date = ?');
           bindings.push(range);
         }
       }
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     const countQuery = `
       SELECT COUNT(*) as total 
       FROM papers_fts 
-      JOIN papers ON papers.id = papers_fts.paper_id 
+      JOIN papers ON papers.rowid = papers_fts.rowid 
       WHERE papers_fts MATCH ? ${whereClause}
     `;
     const countResult = await db.prepare(countQuery).bind(...bindings).first<{ total: number }>();
@@ -78,10 +78,10 @@ export async function GET(request: NextRequest) {
         papers.title,
         papers.authors,
         papers.abstract,
-        papers.recentview_date,
+        papers.submitted_date,
         papers_fts.rank
       FROM papers_fts
-      JOIN papers ON papers.id = papers_fts.paper_id
+      JOIN papers ON papers.rowid = papers_fts.rowid
       WHERE papers_fts MATCH ? ${whereClause}
       ORDER BY papers_fts.rank
       LIMIT ? OFFSET ?
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       title: paper.title,
       authors: JSON.parse(paper.authors),
       abstract: paper.abstract,
-      recentview_date: paper.recentview_date,
+      submitted_date: paper.submitted_date,
       rank: paper.rank,
     }));
 

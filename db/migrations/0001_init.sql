@@ -7,13 +7,13 @@
 CREATE TABLE papers (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
-  authors TEXT NOT NULL,                 -- JSON array as text, e.g. ["John Doe", "Jane Smith"]
-  categories TEXT NOT NULL,              -- JSON array as text, e.g. ["cs.CV", "cs.AI"]
+  authors TEXT NOT NULL,
+  categories TEXT NOT NULL,
   primary_category TEXT,
   abstract TEXT,
-  published_date TEXT,                   -- YYYY-MM-DD format (arXiv submission date, stored but not used for filtering)
-  recentview_date TEXT NOT NULL,         -- YYYY-MM-DD format (date paper appeared on arxiv.org/list/cs.CV/recent)
-  scraped_date TEXT NOT NULL,            -- YYYY-MM-DD format (when pipeline actually fetched this paper)
+  submitted_date TEXT NOT NULL,
+  announce_date TEXT,
+  scraped_date TEXT NOT NULL,
   pdf_url TEXT,
   code_url TEXT,
   project_url TEXT,
@@ -21,7 +21,7 @@ CREATE TABLE papers (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_papers_recentview ON papers(recentview_date DESC);
+CREATE INDEX idx_papers_submitted ON papers(submitted_date DESC);
 CREATE INDEX idx_papers_scraped ON papers(scraped_date DESC);
 CREATE INDEX idx_papers_primary_category ON papers(primary_category);
 
@@ -44,7 +44,6 @@ CREATE INDEX idx_figures_paper ON figures(paper_id);
 -- Full-Text Search (FTS5)
 -- ============================================================================
 CREATE VIRTUAL TABLE papers_fts USING fts5(
-  paper_id UNINDEXED,
   title,
   abstract,
   content=papers,
@@ -53,8 +52,8 @@ CREATE VIRTUAL TABLE papers_fts USING fts5(
 
 -- Triggers to keep FTS5 in sync with papers table
 CREATE TRIGGER papers_ai AFTER INSERT ON papers BEGIN
-  INSERT INTO papers_fts(rowid, paper_id, title, abstract)
-  VALUES (new.rowid, new.id, new.title, new.abstract);
+  INSERT INTO papers_fts(rowid, title, abstract)
+  VALUES (new.rowid, new.title, new.abstract);
 END;
 
 CREATE TRIGGER papers_ad AFTER DELETE ON papers BEGIN

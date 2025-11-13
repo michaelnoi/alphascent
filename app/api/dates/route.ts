@@ -21,10 +21,10 @@ export async function GET(request: NextRequest) {
     const accessibleDates = await getAccessibleDateRanges(request);
 
     const query = `
-      SELECT recentview_date as date, COUNT(*) as count 
+      SELECT submitted_date as date, COUNT(*) as count 
       FROM papers 
-      GROUP BY recentview_date 
-      ORDER BY recentview_date DESC
+      GROUP BY submitted_date 
+      ORDER BY submitted_date DESC
     `;
 
     const result = await db.prepare(query).all<{ date: string; count: number }>();

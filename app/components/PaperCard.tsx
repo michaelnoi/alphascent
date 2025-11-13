@@ -11,8 +11,8 @@ export interface PaperFromAPI {
   categories: string[];
   primary_category: string | null;
   abstract: string | null;
-  published_date: string | null;
-  recentview_date: string;
+  submitted_date: string;
+  announce_date: string | null;
   scraped_date: string;
   pdf_url: string | null;
   code_url: string | null;

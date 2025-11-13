@@ -12,8 +12,8 @@ interface PapersResponse {
     categories: string[];
     primary_category: string | null;
     abstract: string | null;
-    published_date: string | null;
-    recentview_date: string;
+    submitted_date: string;
+    announce_date: string | null;
     scraped_date: string;
     pdf_url: string | null;
     code_url: string | null;
@@ -50,8 +50,8 @@ function transformPaper(paper: Paper, figures: Figure[], r2BaseUrl: string) {
     categories: JSON.parse(paper.categories),
     primary_category: paper.primary_category,
     abstract: paper.abstract,
-    published_date: paper.published_date,
-    recentview_date: paper.recentview_date,
+    submitted_date: paper.submitted_date,
+    announce_date: paper.announce_date,
     scraped_date: paper.scraped_date,
     pdf_url: paper.pdf_url,
     code_url: paper.code_url,
@@ -90,22 +90,22 @@ export async function GET(request: NextRequest) {
     let bindings: unknown[] = [];
 
     if (search) {
-      whereConditions.push('papers.id IN (SELECT paper_id FROM papers_fts WHERE papers_fts MATCH ?)');
+      whereConditions.push('papers.rowid IN (SELECT rowid FROM papers_fts WHERE papers_fts MATCH ?)');
       bindings.push(search);
       
       if (searchScope === 'current' && date) {
-        whereConditions.push('papers.recentview_date = ?');
+        whereConditions.push('papers.submitted_date = ?');
         bindings.push(date);
       } else if (searchScope === 'current' && from && to) {
-        whereConditions.push('papers.recentview_date >= ? AND papers.recentview_date <= ?');
+        whereConditions.push('papers.submitted_date >= ? AND papers.submitted_date <= ?');
         bindings.push(from, to);
       }
     } else {
       if (date) {
-        whereConditions.push('papers.recentview_date = ?');
+        whereConditions.push('papers.submitted_date = ?');
         bindings.push(date);
       } else if (from && to) {
-        whereConditions.push('papers.recentview_date >= ? AND papers.recentview_date <= ?');
+        whereConditions.push('papers.submitted_date >= ? AND papers.submitted_date <= ?');
         bindings.push(from, to);
       }
     }
@@ -115,10 +115,10 @@ export async function GET(request: NextRequest) {
       for (const range of accessibleDates) {
         if (range.includes(':')) {
           const [start, end] = range.split(':');
-          dateAccessConditions.push('(papers.recentview_date >= ? AND papers.recentview_date <= ?)');
+          dateAccessConditions.push('(papers.submitted_date >= ? AND papers.submitted_date <= ?)');
           bindings.push(start, end);
         } else {
-          dateAccessConditions.push('papers.recentview_date = ?');
+          dateAccessConditions.push('papers.submitted_date = ?');
           bindings.push(range);
         }
       }
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
     const papersQuery = `
       SELECT * FROM papers 
       ${whereClause}
-      ORDER BY papers.recentview_date DESC, papers.created_at DESC
+      ORDER BY papers.submitted_date DESC, papers.created_at DESC
       LIMIT ? OFFSET ?
     `;
     
