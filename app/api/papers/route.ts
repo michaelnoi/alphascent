@@ -101,9 +101,10 @@ export async function GET(request: NextRequest) {
 
     let whereConditions: string[] = [];
     let bindings: unknown[] = [];
+    let searchQuery: string | null = null;
 
     if (search) {
-      const searchQuery = search.split(/\s+/).map(term => `${term}*`).join(' ');
+      searchQuery = search.split(/\s+/).map(term => `${term}*`).join(' ');
       whereConditions.push(`${tableName}.rowid IN (SELECT rowid FROM ${ftsTable} WHERE ${ftsTable} MATCH ?)`);
       bindings.push(searchQuery);
       
@@ -147,16 +148,61 @@ export async function GET(request: NextRequest) {
     const countResult = await db.prepare(countQuery).bind(...bindings).first<{ total: number }>();
     const total = countResult?.total || 0;
 
-    const papersQuery = `
-      SELECT * FROM ${tableName}
-      ${whereClause}
-      ORDER BY ${search ? 'rank,' : ''} ${tableName}.submitted_date DESC, ${tableName}.created_at DESC
-      LIMIT ? OFFSET ?
-    `;
+    let papersQuery: string;
+    let queryBindings: unknown[] = [];
+    
+    if (search && searchQuery) {
+      const ftsWhereConditions: string[] = [`${ftsTable} MATCH ?`];
+      queryBindings.push(searchQuery);
+      
+      if (searchScope === 'current' && date) {
+        ftsWhereConditions.push(`${tableName}.submitted_date = ?`);
+        queryBindings.push(date);
+      } else if (searchScope === 'current' && from && to) {
+        ftsWhereConditions.push(`${tableName}.submitted_date >= ? AND ${tableName}.submitted_date <= ?`);
+        queryBindings.push(from, to);
+      }
+      
+      if (accessibleDates && !date && !(from && to)) {
+        const dateAccessConditions: string[] = [];
+        for (const range of accessibleDates) {
+          if (range.includes(':')) {
+            const [start, end] = range.split(':');
+            dateAccessConditions.push(`(${tableName}.submitted_date >= ? AND ${tableName}.submitted_date <= ?)`);
+            queryBindings.push(start, end);
+          } else {
+            dateAccessConditions.push(`${tableName}.submitted_date = ?`);
+            queryBindings.push(range);
+          }
+        }
+        if (dateAccessConditions.length > 0) {
+          ftsWhereConditions.push(`(${dateAccessConditions.join(' OR ')})`);
+        }
+      }
+      
+      const ftsWhereClause = ftsWhereConditions.length > 0 ? `WHERE ${ftsWhereConditions.join(' AND ')}` : '';
+      
+      papersQuery = `
+        SELECT ${tableName}.*
+        FROM ${tableName}
+        INNER JOIN ${ftsTable} ON ${tableName}.rowid = ${ftsTable}.rowid
+        ${ftsWhereClause}
+        ORDER BY ${ftsTable}.rank, ${tableName}.submitted_date DESC, ${tableName}.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+    } else {
+      papersQuery = `
+        SELECT * FROM ${tableName}
+        ${whereClause}
+        ORDER BY ${tableName}.submitted_date DESC, ${tableName}.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+      queryBindings = [...bindings];
+    }
     
     const papersResult = await db
       .prepare(papersQuery)
-      .bind(...bindings, limit, offset)
+      .bind(...queryBindings, limit, offset)
       .all<Paper>();
 
     const papers = papersResult.results || [];
