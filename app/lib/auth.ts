@@ -105,22 +105,66 @@ export async function getAccessibleDateRanges(request: Request): Promise<string[
   const url = new URL(request.url);
   const keyParam = url.searchParams.get('key');
   const authHeader = request.headers.get('Authorization');
-  const key = keyParam || authHeader?.replace('Bearer ', '') || null;
-
-  if (!key) {
-    return getDefaultAccessibleDates();
+  const cookieHeader = request.headers.get('Cookie');
+  
+  let keyHash: string | null = null;
+  let key: string | null = null;
+  
+  if (keyParam || authHeader) {
+    key = keyParam || authHeader?.replace('Bearer ', '') || null;
+  } else if (cookieHeader) {
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [name, value] = cookie.trim().split('=');
+      if (name && value) acc[name] = decodeURIComponent(value);
+      return acc;
+    }, {} as Record<string, string>);
+    
+    keyHash = cookies['hc_access_token'] || null;
   }
 
-  const accessKey = await validateAccessKey(key);
+  let accessKey: AccessKey | null = null;
+
+  if (keyHash) {
+    const db = getDB();
+    const result = await db
+      .prepare('SELECT * FROM access_keys WHERE key_hash = ? AND is_revoked = 0')
+      .bind(keyHash)
+      .first<AccessKey>();
+    
+    if (result) {
+      let isValid = true;
+      if (result.expires_at) {
+        const expiresAtStr = String(result.expires_at).trim();
+        if (expiresAtStr) {
+          const expiryDate = new Date(expiresAtStr);
+          if (!isNaN(expiryDate.getTime())) {
+            const now = new Date();
+            isValid = expiryDate > now;
+          }
+        }
+      }
+      
+      if (isValid) {
+        accessKey = result;
+        const ip = request.headers.get('CF-Connecting-IP') || 
+                   request.headers.get('X-Forwarded-For') || 
+                   'unknown';
+        await updateKeyUsage(keyHash, ip);
+      }
+    }
+  } else if (key) {
+    accessKey = await validateAccessKey(key);
+    if (accessKey) {
+      const ip = request.headers.get('CF-Connecting-IP') || 
+                 request.headers.get('X-Forwarded-For') || 
+                 'unknown';
+      await updateKeyUsage(await hashKey(key), ip);
+    }
+  }
+
   if (!accessKey) {
     return getDefaultAccessibleDates();
   }
-
-  const ip = request.headers.get('CF-Connecting-IP') || 
-              request.headers.get('X-Forwarded-For') || 
-              'unknown';
-  
-  await updateKeyUsage(await hashKey(key), ip);
 
   return parseAccessibleDates(accessKey);
 }
