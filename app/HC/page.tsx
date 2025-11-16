@@ -1,38 +1,55 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { getDB } from '@/app/lib/db';
 import CategoryPage from '@/app/components/CategoryPage';
 
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
+async function validateToken(keyHash: string): Promise<boolean> {
+  try {
+    const db = getDB();
+    
+    const result = await db
+      .prepare('SELECT id, expires_at, is_revoked FROM access_keys WHERE key_hash = ?')
+      .bind(keyHash)
+      .first<{
+        id: string;
+        expires_at: string | null;
+        is_revoked: number;
+      }>();
+    
+    if (!result) {
+      return false;
+    }
+    
+    if (result.is_revoked) {
+      return false;
+    }
+    
+    if (result.expires_at) {
+      const expiryDate = new Date(result.expires_at);
+      if (expiryDate < new Date()) {
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
 }
 
-export default function HCPage() {
-  const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
+export default async function HCPage() {
+  const cookieStore = await cookies();
+  const keyHash = cookieStore.get('hc_access_token')?.value;
   
-  useEffect(() => {
-    const token = getCookie('hc_access_token');
-    if (!token) {
-      router.replace('/hc/auth');
-    } else {
-      setIsChecking(false);
-    }
-  }, [router]);
+  if (!keyHash) {
+    redirect('/hc/auth');
+  }
   
-  if (isChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600">Checking access...</div>
-      </div>
-    );
+  const isValid = await validateToken(keyHash);
+  if (!isValid) {
+    redirect('/hc/auth');
   }
   
   return <CategoryPage category="cs.HC" displayName="Human-Computer Interaction" />;
 }
-
