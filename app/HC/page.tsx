@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { getDB } from '@/app/lib/db';
 import CategoryPage from '@/app/components/CategoryPage';
 
+export const runtime = 'edge';
+
 async function validateToken(keyHash: string): Promise<boolean> {
   try {
     const db = getDB();
