@@ -103,22 +103,28 @@ export function getDB(): D1Database {
     const context = getRequestContext();
     const env = context.env as CloudflareEnv;
     
-    if (!env.DB) {
+    if (!env?.DB) {
       throw new Error('D1 database binding not found. Make sure DB is bound in wrangler.toml');
     }
     
     return env.DB;
   } catch (error) {
-    throw new Error(`Failed to get D1 database: ${error}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to get D1 database: ${errorMessage}`);
   }
 }
 
 export function getEnv(): CloudflareEnv {
   try {
     const context = getRequestContext();
-    return context.env as CloudflareEnv;
+    const env = context.env as CloudflareEnv;
+    if (!env) {
+      throw new Error('Environment not available');
+    }
+    return env;
   } catch (error) {
-    throw new Error(`Failed to get environment: ${error}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to get environment: ${errorMessage}`);
   }
 }
 

@@ -16,11 +16,11 @@ interface DatesResponse {
 }
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const category = searchParams.get('category');
+  
   try {
     const db = getDB();
-    
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
     
     if (!category) {
       return NextResponse.json({ error: 'category parameter required' }, { status: 400 });
@@ -55,9 +55,19 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Dates API error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('Dates API error:', errorMessage);
+    console.error('Stack:', errorStack);
+    
     return NextResponse.json(
-      { error: 'Failed to fetch dates', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Failed to fetch dates', 
+        details: errorMessage,
+        category: category || null,
+        tableName: category ? getCategoryTable(category) : null,
+      },
       { status: 500 }
     );
   }

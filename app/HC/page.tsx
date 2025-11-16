@@ -1,54 +1,36 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { getDB } from '@/app/lib/db';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import CategoryPage from '@/app/components/CategoryPage';
 
-async function validateToken(keyHash: string): Promise<boolean> {
-  try {
-    const db = getDB();
-    
-    const query = `
-      SELECT id, expires_at, is_revoked
-      FROM access_keys 
-      WHERE key_hash = ?
-    `;
-    
-    const result = await db.prepare(query).bind(keyHash).first<{
-      id: string;
-      expires_at: string | null;
-      is_revoked: number;
-    }>();
-    
-    if (!result || result.is_revoked) {
-      return false;
-    }
-    
-    if (result.expires_at) {
-      const expiryDate = new Date(result.expires_at);
-      if (expiryDate < new Date()) {
-        return false;
-      }
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Token validation error:', error);
-    return false;
-  }
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
 }
 
-export default async function HCPage() {
-  const cookieStore = await cookies();
-  const keyHash = cookieStore.get('hc_access_token')?.value;
+export default function HCPage() {
+  const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
   
-  if (!keyHash) {
-    redirect('/HC/auth');
-  }
+  useEffect(() => {
+    const token = getCookie('hc_access_token');
+    if (!token) {
+      router.replace('/hc/auth');
+    } else {
+      setIsChecking(false);
+    }
+  }, [router]);
   
-  const isValid = await validateToken(keyHash);
-  
-  if (!isValid) {
-    redirect('/HC/auth');
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-600">Checking access...</div>
+      </div>
+    );
   }
   
   return <CategoryPage category="cs.HC" displayName="Human-Computer Interaction" />;

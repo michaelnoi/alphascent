@@ -1,5 +1,14 @@
-import CategoryPage from '@/app/components/CategoryPage';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  return <CategoryPage category="cs.CV" displayName="Computer Vision" />;
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.replace('/cv');
+  }, [router]);
+  
+  return null;
 }

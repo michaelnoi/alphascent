@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+export const runtime = 'edge';
+
 export default function HCAuthPage() {
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
@@ -24,7 +26,7 @@ export default function HCAuthPage() {
       const data = await res.json();
       
       if (res.ok) {
-        router.push('/HC');
+        router.push('/hc');
         router.refresh();
       } else {
         setError(data.error || 'Invalid token');
