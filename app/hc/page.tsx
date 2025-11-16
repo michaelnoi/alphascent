@@ -27,9 +27,16 @@ async function validateToken(keyHash: string): Promise<boolean> {
     }
     
     if (result.expires_at) {
-      const expiryDate = new Date(result.expires_at);
-      if (expiryDate < new Date()) {
-        return false;
+      const expiresAtStr = String(result.expires_at).trim();
+      if (expiresAtStr) {
+        const expiryDate = new Date(expiresAtStr);
+        if (isNaN(expiryDate.getTime())) {
+          return false;
+        }
+        const now = new Date();
+        if (expiryDate <= now) {
+          return false;
+        }
       }
     }
     

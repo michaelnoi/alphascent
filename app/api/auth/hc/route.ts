@@ -45,9 +45,16 @@ export async function POST(request: NextRequest) {
     }
     
     if (result.expires_at) {
-      const expiryDate = new Date(result.expires_at);
-      if (expiryDate < new Date()) {
-        return NextResponse.json({ error: 'Token has expired' }, { status: 401 });
+      const expiresAtStr = String(result.expires_at).trim();
+      if (expiresAtStr) {
+        const expiryDate = new Date(expiresAtStr);
+        if (isNaN(expiryDate.getTime())) {
+          return NextResponse.json({ error: 'Invalid expiration date format' }, { status: 401 });
+        }
+        const now = new Date();
+        if (expiryDate <= now) {
+          return NextResponse.json({ error: 'Token has expired' }, { status: 401 });
+        }
       }
     }
     

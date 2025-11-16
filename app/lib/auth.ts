@@ -36,8 +36,17 @@ export async function validateAccessKey(key: string | null): Promise<AccessKey |
 
   if (!result) return null;
 
-  if (result.expires_at && new Date(result.expires_at) < new Date()) {
-    return null;
+  if (result.expires_at) {
+    const expiresAtStr = String(result.expires_at).trim();
+    if (expiresAtStr) {
+      const expiryDate = new Date(expiresAtStr);
+      if (!isNaN(expiryDate.getTime())) {
+        const now = new Date();
+        if (expiryDate <= now) {
+          return null;
+        }
+      }
+    }
   }
 
   return result;
