@@ -2,35 +2,11 @@
 -- Migration 0001: Initial schema with papers, figures, FTS5 search, and access keys
 
 -- ============================================================================
--- Papers Table (denormalized for simplicity)
--- ============================================================================
-CREATE TABLE papers (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  authors TEXT NOT NULL,
-  categories TEXT NOT NULL,
-  primary_category TEXT,
-  abstract TEXT,
-  submitted_date TEXT NOT NULL,
-  announce_date TEXT,
-  scraped_date TEXT NOT NULL,
-  pdf_url TEXT,
-  code_url TEXT,
-  project_url TEXT,
-  comments TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_papers_submitted ON papers(submitted_date DESC);
-CREATE INDEX idx_papers_scraped ON papers(scraped_date DESC);
-CREATE INDEX idx_papers_primary_category ON papers(primary_category);
-
--- ============================================================================
--- Figures Table
+-- Figures Table (shared across all categories)
 -- ============================================================================
 CREATE TABLE figures (
   id TEXT PRIMARY KEY,                   -- e.g., "2510.14230-teaser"
-  paper_id TEXT NOT NULL REFERENCES papers(id) ON DELETE CASCADE,
+  paper_id TEXT NOT NULL,                -- References papers across all category tables
   kind TEXT NOT NULL,                    -- 'teaser' or 'architecture'
   r2_key TEXT NOT NULL,                  -- e.g., "figures/2510.14230/teaser.webp"
   thumb_key TEXT,                        -- e.g., "figures/2510.14230/teaser_thumb.webp"
@@ -39,32 +15,6 @@ CREATE TABLE figures (
 );
 
 CREATE INDEX idx_figures_paper ON figures(paper_id);
-
--- ============================================================================
--- Full-Text Search (FTS5)
--- ============================================================================
-CREATE VIRTUAL TABLE papers_fts USING fts5(
-  title,
-  abstract,
-  content=papers,
-  content_rowid=rowid
-);
-
--- Triggers to keep FTS5 in sync with papers table
-CREATE TRIGGER papers_ai AFTER INSERT ON papers BEGIN
-  INSERT INTO papers_fts(rowid, title, abstract)
-  VALUES (new.rowid, new.title, new.abstract);
-END;
-
-CREATE TRIGGER papers_ad AFTER DELETE ON papers BEGIN
-  DELETE FROM papers_fts WHERE rowid = old.rowid;
-END;
-
-CREATE TRIGGER papers_au AFTER UPDATE ON papers BEGIN
-  UPDATE papers_fts 
-  SET title = new.title, abstract = new.abstract
-  WHERE rowid = new.rowid;
-END;
 
 -- ============================================================================
 -- Access Keys (Authentication)

@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
+import CategoryPage from '@/app/components/CategoryPage';
 
 export default function Home() {
-  redirect('/cv');
+  return <CategoryPage category="cs.CV" displayName="Computer Vision" />;
 }

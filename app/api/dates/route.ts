@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB } from '@/app/lib/db';
 import { getAccessibleDateRanges, isDateAccessible } from '@/app/lib/auth';
+import { getCategoryTable, isValidCategory } from '@/app/lib/categoryHelpers';
 
 export const runtime = 'edge';
 
@@ -18,11 +19,23 @@ export async function GET(request: NextRequest) {
   try {
     const db = getDB();
     
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get('category');
+    
+    if (!category) {
+      return NextResponse.json({ error: 'category parameter required' }, { status: 400 });
+    }
+    
+    if (!isValidCategory(category)) {
+      return NextResponse.json({ error: 'invalid category' }, { status: 400 });
+    }
+    
+    const tableName = getCategoryTable(category);
     const accessibleDates = await getAccessibleDateRanges(request);
 
     const query = `
       SELECT submitted_date as date, COUNT(*) as count 
-      FROM papers 
+      FROM ${tableName}
       GROUP BY submitted_date 
       ORDER BY submitted_date DESC
     `;

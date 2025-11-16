@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB, getEnv, Paper, Figure, PaperWithFigures } from '@/app/lib/db';
 import { getAccessibleDateRanges, isDateAccessible } from '@/app/lib/auth';
+import { getCategoryTable, getFTSTable, isValidCategory } from '@/app/lib/categoryHelpers';
 
 export const runtime = 'edge';
 
@@ -75,6 +76,18 @@ export async function GET(request: NextRequest) {
     
     const r2BaseUrl = env.R2_BUCKET_URL || process.env.R2_BUCKET_URL || '';
     
+    const category = searchParams.get('category');
+    if (!category) {
+      return NextResponse.json({ error: 'category parameter required' }, { status: 400 });
+    }
+    
+    if (!isValidCategory(category)) {
+      return NextResponse.json({ error: 'invalid category' }, { status: 400 });
+    }
+    
+    const tableName = getCategoryTable(category);
+    const ftsTable = getFTSTable(category);
+    
     const date = searchParams.get('date');
     const from = searchParams.get('from');
     const to = searchParams.get('to');
@@ -90,22 +103,23 @@ export async function GET(request: NextRequest) {
     let bindings: unknown[] = [];
 
     if (search) {
-      whereConditions.push('papers.rowid IN (SELECT rowid FROM papers_fts WHERE papers_fts MATCH ?)');
-      bindings.push(search);
+      const searchQuery = search.split(/\s+/).map(term => `${term}*`).join(' ');
+      whereConditions.push(`${tableName}.rowid IN (SELECT rowid FROM ${ftsTable} WHERE ${ftsTable} MATCH ?)`);
+      bindings.push(searchQuery);
       
       if (searchScope === 'current' && date) {
-        whereConditions.push('papers.submitted_date = ?');
+        whereConditions.push(`${tableName}.submitted_date = ?`);
         bindings.push(date);
       } else if (searchScope === 'current' && from && to) {
-        whereConditions.push('papers.submitted_date >= ? AND papers.submitted_date <= ?');
+        whereConditions.push(`${tableName}.submitted_date >= ? AND ${tableName}.submitted_date <= ?`);
         bindings.push(from, to);
       }
     } else {
       if (date) {
-        whereConditions.push('papers.submitted_date = ?');
+        whereConditions.push(`${tableName}.submitted_date = ?`);
         bindings.push(date);
       } else if (from && to) {
-        whereConditions.push('papers.submitted_date >= ? AND papers.submitted_date <= ?');
+        whereConditions.push(`${tableName}.submitted_date >= ? AND ${tableName}.submitted_date <= ?`);
         bindings.push(from, to);
       }
     }
@@ -115,10 +129,10 @@ export async function GET(request: NextRequest) {
       for (const range of accessibleDates) {
         if (range.includes(':')) {
           const [start, end] = range.split(':');
-          dateAccessConditions.push('(papers.submitted_date >= ? AND papers.submitted_date <= ?)');
+          dateAccessConditions.push(`(${tableName}.submitted_date >= ? AND ${tableName}.submitted_date <= ?)`);
           bindings.push(start, end);
         } else {
-          dateAccessConditions.push('papers.submitted_date = ?');
+          dateAccessConditions.push(`${tableName}.submitted_date = ?`);
           bindings.push(range);
         }
       }
@@ -129,14 +143,14 @@ export async function GET(request: NextRequest) {
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    const countQuery = `SELECT COUNT(*) as total FROM papers ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) as total FROM ${tableName} ${whereClause}`;
     const countResult = await db.prepare(countQuery).bind(...bindings).first<{ total: number }>();
     const total = countResult?.total || 0;
 
     const papersQuery = `
-      SELECT * FROM papers 
+      SELECT * FROM ${tableName}
       ${whereClause}
-      ORDER BY papers.submitted_date DESC, papers.created_at DESC
+      ORDER BY ${search ? 'rank,' : ''} ${tableName}.submitted_date DESC, ${tableName}.created_at DESC
       LIMIT ? OFFSET ?
     `;
     
@@ -208,4 +222,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
