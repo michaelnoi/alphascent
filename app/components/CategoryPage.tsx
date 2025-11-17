@@ -5,6 +5,8 @@ import { PaperCard, type PaperFromAPI } from '@/app/components/PaperCard';
 import { SearchBar } from '@/app/components/SearchBar';
 import { DatePicker } from '@/app/components/DatePicker';
 import { useKeyboardNav } from '@/app/components/useKeyboardNav';
+import { KeyboardShortcuts } from '@/app/components/KeyboardShortcuts';
+import { Keyboard } from 'lucide-react';
 
 interface DateInfo {
   date: string;
@@ -45,6 +47,7 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchScope, setSearchScope] = useState<'all' | 'current'>('all');
+  const [showShortcuts, setShowShortcuts] = useState(false);
   
   const [pagination, setPagination] = useState({
     page: 1,
@@ -151,9 +154,18 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
       if (e.key === 'M' && e.shiftKey) {
         e.preventDefault();
         handleLoadMore();
+      }
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
       }
     };
 
@@ -209,9 +221,11 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-0 z-50 bg-[#fffaf3]/95 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
-        <div className="max-w-6xl mx-auto px-8 py-4">
-          <div className="flex items-center justify-between gap-6 mb-3">
+      <KeyboardShortcuts isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      
+      <div className="sticky top-0 z-40 bg-[#fffaf3]/95 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
+        <div className="max-w-6xl mx-auto px-8 py-5">
+          <div className="flex items-center justify-between gap-6 mb-4">
             <div className="flex items-center gap-6">
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
@@ -246,30 +260,15 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
                 onDateRangeSelect={handleDateRangeSelect}
               />
 
-              <div className="text-xs bg-white/70 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">⌘F</kbd>
-                    <span className="text-gray-500 text-[10px]">search</span>
-                  </div>
-                  <div className="w-px h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">j</kbd>
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">k</kbd>
-                    <span className="text-gray-500 text-[10px]">navigate</span>
-                  </div>
-                  <div className="w-px h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">␣</kbd>
-                    <span className="text-gray-500 text-[10px]">expand</span>
-                  </div>
-                  <div className="w-px h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono">⇧M</kbd>
-                    <span className="text-gray-500 text-[10px]">load more</span>
-                  </div>
-                </div>
-              </div>
+              <button
+                onClick={() => setShowShortcuts(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-white/70 backdrop-blur-sm border border-gray-200 rounded-lg text-xs hover:bg-gray-50 transition-colors shadow-sm"
+                title="Keyboard shortcuts (Press ?)"
+              >
+                <Keyboard className="w-4 h-4 text-gray-600" />
+                <span className="text-gray-700 font-medium">Shortcuts</span>
+                <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-[10px] font-mono text-gray-600">?</kbd>
+              </button>
             </div>
           </div>
           
@@ -279,7 +278,7 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
             initialScope={searchScope}
           />
           
-          <div className="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+          <div className="mt-3 h-1 bg-gray-200 rounded-full overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-300 ease-out"
               style={{ width: `${progressPercent}%` }}
@@ -330,7 +329,7 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
         )}
 
         <footer className="mt-16 pt-6 border-t border-gray-200 text-center text-xs text-gray-400">
-          Data from <a href="https://arxiv.org" className="text-indigo-600 hover:text-indigo-700 font-medium" target="_blank" rel="noopener noreferrer">arXiv.org</a>. Thank you to arXiv for use of its open access interoperability.
+          Data from <a href="https://arxiv.org" className="text-indigo-600 hover:text-indigo-700 font-medium" target="_blank" rel="noopener noreferrer">arXiv.org</a>. Thank you to arXiv for use of its open access interoperability. Code open source at <a href="https://github.com/michaelnoi/alphascent" className="text-indigo-600 hover:text-indigo-700 font-medium" target="_blank" rel="noopener noreferrer">github.com/michaelnoi/alphascent</a>.
         </footer>
       </div>
     </div>

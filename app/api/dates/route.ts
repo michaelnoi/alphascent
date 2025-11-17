@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB } from '@/app/lib/db';
-import { getAccessibleDateRanges, isDateAccessible } from '@/app/lib/auth';
 import { getCategoryTable, isValidCategory } from '@/app/lib/categoryHelpers';
 
 export const runtime = 'edge';
@@ -31,7 +30,6 @@ export async function GET(request: NextRequest) {
     }
     
     const tableName = getCategoryTable(category);
-    const accessibleDates = await getAccessibleDateRanges(request);
 
     const query = `
       SELECT submitted_date as date, COUNT(*) as count 
@@ -43,14 +41,9 @@ export async function GET(request: NextRequest) {
     const result = await db.prepare(query).all<{ date: string; count: number }>();
     const allDates = result.results || [];
 
-    const filteredDates = allDates.filter(d => {
-      if (accessibleDates === null) return true;
-      return isDateAccessible(d.date, accessibleDates);
-    });
-
     const response: DatesResponse = {
-      dates: filteredDates,
-      accessible_dates: accessibleDates,
+      dates: allDates,
+      accessible_dates: null,
     };
 
     return NextResponse.json(response);

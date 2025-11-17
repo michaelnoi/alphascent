@@ -13,8 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AlphaScent - Foraging-First Computer Vision Papers",
-  description: "A foraging-optimized interface for exploring arXiv cs.CV papers with visual-first representation",
+  title: "AlphaScent - Figures-First Computer Science Papers",
+  description: "arXiv papers with visual-first representation",
+  icons: {
+    icon: '/icon.svg',
+    apple: '/apple-icon.png',
+  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

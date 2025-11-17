@@ -91,16 +91,6 @@ export function isDateAccessible(date: string, accessibleDates: string[] | null)
   return false;
 }
 
-export function getDefaultAccessibleDates(): string[] {
-  const today = new Date();
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 7);
-
-  const formatDate = (d: Date) => d.toISOString().split('T')[0];
-
-  return [`${formatDate(sevenDaysAgo)}:${formatDate(today)}`];
-}
-
 export async function getAccessibleDateRanges(request: Request): Promise<string[] | null> {
   const url = new URL(request.url);
   const keyParam = url.searchParams.get('key');
@@ -163,7 +153,7 @@ export async function getAccessibleDateRanges(request: Request): Promise<string[
   }
 
   if (!accessKey) {
-    return getDefaultAccessibleDates();
+    return null;
   }
 
   return parseAccessibleDates(accessKey);

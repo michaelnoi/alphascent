@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDB, getEnv, Paper, Figure, PaperWithFigures } from '@/app/lib/db';
-import { getAccessibleDateRanges, isDateAccessible } from '@/app/lib/auth';
 import { getCategoryTable, getFTSTable, isValidCategory } from '@/app/lib/categoryHelpers';
 
 export const runtime = 'edge';
@@ -97,8 +96,6 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10), 200);
     const offset = (page - 1) * limit;
 
-    const accessibleDates = await getAccessibleDateRanges(request);
-
     let whereConditions: string[] = [];
     let bindings: unknown[] = [];
     let searchQuery: string | null = null;
@@ -125,23 +122,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (accessibleDates && !date && !(from && to)) {
-      const dateAccessConditions: string[] = [];
-      for (const range of accessibleDates) {
-        if (range.includes(':')) {
-          const [start, end] = range.split(':');
-          dateAccessConditions.push(`(${tableName}.submitted_date >= ? AND ${tableName}.submitted_date <= ?)`);
-          bindings.push(start, end);
-        } else {
-          dateAccessConditions.push(`${tableName}.submitted_date = ?`);
-          bindings.push(range);
-        }
-      }
-      if (dateAccessConditions.length > 0) {
-        whereConditions.push(`(${dateAccessConditions.join(' OR ')})`);
-      }
-    }
-
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     const countQuery = `SELECT COUNT(*) as total FROM ${tableName} ${whereClause}`;
@@ -161,23 +141,6 @@ export async function GET(request: NextRequest) {
       } else if (searchScope === 'current' && from && to) {
         ftsWhereConditions.push(`${tableName}.submitted_date >= ? AND ${tableName}.submitted_date <= ?`);
         queryBindings.push(from, to);
-      }
-      
-      if (accessibleDates && !date && !(from && to)) {
-        const dateAccessConditions: string[] = [];
-        for (const range of accessibleDates) {
-          if (range.includes(':')) {
-            const [start, end] = range.split(':');
-            dateAccessConditions.push(`(${tableName}.submitted_date >= ? AND ${tableName}.submitted_date <= ?)`);
-            queryBindings.push(start, end);
-          } else {
-            dateAccessConditions.push(`${tableName}.submitted_date = ?`);
-            queryBindings.push(range);
-          }
-        }
-        if (dateAccessConditions.length > 0) {
-          ftsWhereConditions.push(`(${dateAccessConditions.join(' OR ')})`);
-        }
       }
       
       const ftsWhereClause = ftsWhereConditions.length > 0 ? `WHERE ${ftsWhereConditions.join(' AND ')}` : '';
