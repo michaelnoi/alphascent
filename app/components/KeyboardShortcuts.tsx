@@ -48,7 +48,7 @@ export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
         { keys: ['i'], description: 'Open PDF' },
         { keys: ['o'], description: 'Open code repository (if available)' },
         { keys: ['p'], description: 'Open project page (if available)' },
-        { keys: ['⇧', 'u/i/o/p'], description: 'Stay on current page (otherwise opens in new tab)' },
+        { keys: ['⇧', 'u/i/o/p'], description: 'Open in new tab (otherwise navigates in same tab)' },
       ],
     },
     {

@@ -82,8 +82,8 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
   const remainingAuthors = paper.authors.length - 3;
 
   const abstractPreview = paper.abstract?.split('.')[0] + '.' || '';
-  const teaserFigure = paper.figures.find(f => f.kind === 'teaser');
-  const architectureFigure = paper.figures.find(f => f.kind === 'architecture');
+  const firstFigure = paper.figures.length > 0 ? paper.figures[0] : null;
+  const secondFigure = paper.figures.length > 1 ? paper.figures[1] : null;
   const absUrl = paper.pdf_url?.replace('/pdf/', '/abs/') || '';
 
   if (isExpanded) {
@@ -104,10 +104,10 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
         <div className="p-6 h-[75vh] flex flex-col overflow-hidden bg-orange-50/40">
           <div className="flex gap-6 flex-shrink-0 mb-4 pb-4 border-b border-indigo-100/30">
             <div className="w-48 h-36 bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100/50 rounded-xl flex-shrink-0 flex items-center justify-center shadow-inner overflow-hidden">
-              {teaserFigure?.thumb ? (
+              {firstFigure?.thumb ? (
                 <Image 
-                  src={teaserFigure.thumb} 
-                  alt="Teaser preview"
+                  src={firstFigure.thumb} 
+                  alt="First figure preview"
                   width={200}
                   height={150}
                   className="w-full h-full object-cover"
@@ -195,37 +195,37 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
               {paper.abstract}
             </p>
 
-            {(teaserFigure || architectureFigure) && (
+            {(firstFigure || secondFigure) && (
               <div className="mb-5">
                 <h4 className="text-sm font-medium text-gray-700 mb-3">Figures</h4>
-                <div className={`grid gap-4 ${teaserFigure && architectureFigure ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                  {teaserFigure && (
+                <div className={`grid gap-4 ${firstFigure && secondFigure ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {firstFigure && (
                     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                       <Image 
-                        src={teaserFigure.url} 
-                        alt="Method teaser"
+                        src={firstFigure.url} 
+                        alt="First figure"
                         width={800}
                         height={600}
                         className="w-full h-auto"
                         loading="lazy"
                       />
                       <div className="px-3 py-2 bg-gray-50 text-xs text-gray-600 border-t font-medium">
-                        Teaser
+                        First figure
                       </div>
                     </div>
                   )}
-                  {architectureFigure && (
+                  {secondFigure && (
                     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                       <Image 
-                        src={architectureFigure.url} 
-                        alt="Architecture diagram"
+                        src={secondFigure.url} 
+                        alt="Second figure"
                         width={800}
                         height={600}
                         className="w-full h-auto"
                         loading="lazy"
                       />
                       <div className="px-3 py-2 bg-gray-50 text-xs text-gray-600 border-t font-medium">
-                        Architecture
+                        Second figure
                       </div>
                     </div>
                   )}
@@ -260,10 +260,10 @@ export function PaperCard({ paper, isActive = false, onCardClick }: PaperCardPro
     >
       <div className="flex gap-4">
         <div className="w-20 h-16 bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100/50 rounded-lg flex-shrink-0 flex items-center justify-center shadow-sm overflow-hidden">
-          {teaserFigure?.thumb ? (
+          {firstFigure?.thumb ? (
             <Image 
-              src={teaserFigure.thumb} 
-              alt="Teaser preview"
+              src={firstFigure.thumb} 
+              alt="First figure preview"
               width={200}
               height={150}
               className="w-full h-full object-cover"

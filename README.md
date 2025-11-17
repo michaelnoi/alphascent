@@ -1,205 +1,100 @@
 # AlphaScent
 
-A foraging-first interface for computer vision research papers from arXiv, live at [alphascent.org](https://alphascent.org). Updates daily with the latest cs.CV papers, optimized for rapid understanding and decision-making in exploratory research tasks.
+A figure-first interface for computer science research papers from arXiv, live at [alphascent.org](https://alphascent.org). Automatically extracted figures from PDFs are shown inline, optimized for rapid understanding and decision-making in exploratory research tasks.
+
+## About
+
+AlphaScent displays arXiv papers with automatically extracted figures shown inline. All data comes from arXiv, and dates shown are **submitted dates** (not announcement dates).
+
+**Important Disclaimer**: Papers displayed here may not be the most up-to-date versions. Always check the actual arXiv abstract/PDF view for the latest version. Note that many published papers don't update their arXiv submissions with camera-ready versions from conferences/journals, so always verify you're viewing the most current version.
+
+### Categories
+
+Currently, AlphaScent supports two categories:
+
+- **Computer Vision ([alphascent.org/cv](https://alphascent.org/cv))**: Contains papers from this year (2025) only
+- **Human-Computer Interaction ([alphascent.org/hc](https://alphascent.org/hc))**: Contains **all historical papers** submitted to arXiv in the cs.HC category. Currently access-controlled for a user study (requires authentication token).
 
 ## Design Philosophy
 
-AlphaScent prioritizes **information scent maximization** for foraging-heavy researcher tasks:
-
 1. **Speed over features**: No LLM summaries, no loading states
-2. **Visual hooks**: AI-extracted teaser and architecture figures shown inline
+2. **Visual hooks**: Automatically extracted figures shown inline (for now, we display first and second figures from each paper, eventually we will smartly select teaser/architecture/results/etc. figures)
 3. **Zero friction**: One-click expansion, keyboard-first navigation
 4. **Progressive disclosure**: Essential info first, details on demand
-5. **Daily updates**: Fresh papers every day, automatically scraped and processed
-
 
 ## Keyboard Shortcuts
 
+### Navigation
+
+| Key | Action |
+|-----|--------|
+| <kbd>j</kbd> | Navigate to next paper |
+| <kbd>k</kbd> | Navigate to previous paper |
+| <kbd>Space</kbd> | Expand/collapse paper details |
+
 ### Search
+
 | Key | Action |
 |-----|--------|
 | <kbd>⌘</kbd> <kbd>F</kbd> / <kbd>Ctrl</kbd> <kbd>F</kbd> | Focus search bar |
-| <kbd>Enter</kbd> | Exit search (return to navigation) |
-
-### Navigation
-| Key | Action |
-|-----|--------|
-| <kbd>j</kbd> / <kbd>k</kbd> | Navigate to next/previous paper |
-| <kbd>Space</kbd> | Expand/collapse current paper |
+| <kbd>Enter</kbd> | Execute search (disables text input) |
+| <kbd>Esc</kbd> | Blur search bar |
 
 ### Open Links
+
 | Key | Action |
 |-----|--------|
 | <kbd>u</kbd> | Open abstract page |
 | <kbd>i</kbd> | Open PDF |
 | <kbd>o</kbd> | Open code repository (if available) |
 | <kbd>p</kbd> | Open project page (if available) |
-| <kbd>Shift</kbd> + above | Stay on current page (otherwise jumps to new tab) |
+| <kbd>Shift</kbd> + <kbd>u</kbd>/<kbd>i</kbd>/<kbd>o</kbd>/<kbd>p</kbd> | Open in new tab (otherwise navigates in same tab) |
 
+### Content
 
+| Key | Action |
+|-----|--------|
+| <kbd>Shift</kbd> + <kbd>M</kbd> | Load more papers |
+
+### Help
+
+| Key | Action |
+|-----|--------|
+| <kbd>?</kbd> | Show/hide keyboard shortcuts |
+| <kbd>Esc</kbd> | Close shortcuts dialog |
 
 ## Features
 
-- **Visual-First Representation**: Automatically extracted teaser and architecture figures from PDFs
-- **Smart Figure Extraction**: ML-powered classification using Gemini 2.5 Flash to identify the best teaser and architecture diagrams
-- **Accordion Expansion**: Quick overview with inline detailed view showing full abstracts and high-resolution figures
+- **Visual-First Representation**: Automatically extracted figures from PDFs
+- **Simple Figure Selection**: First two valid figures from each paper
+- **Expandable Details**: Quick overview with inline detailed view showing full abstracts and high-resolution figures
 - **Keyboard Navigation**: Power-user shortcuts for rapid browsing and link opening
-- **Fast Performance**: No loading spinners, pre-rendered data, aggressive caching
-- **Filtered Search**: Debounced text search across titles, abstracts, and authors
-- **Link Detection**: Automatically extracts code repositories and project pages from paper metadata
-- **Responsive Design**: Optimized for desktop research workflows
+- **Fast Performance**: No loading spinners, Cloudflare-edge delivery
+- **Full-Text Search**: full-text search across **titles, abstracts and authors**. Can be toggled to search either:
+  - **All papers**: Search across all available historical papers for the category
+  - **Current view**: Search only within the currently selected date or date range
+- **Date Filtering**: Browse papers by single date or date range
+- **Link Detection**: Automatically extracts code repositories and project pages from paper comments
 
+For development setup, deployment, and technical details, see [SETUP.md](SETUP.md).
 
-## Quick Start
+## TODO
 
-### Prerequisites
+### Category Views
 
-- Node.js 18+ (with nvm recommended)
-- Python 3.8+
+- [x] HC views (all historical papers, access controlled)
+- [x] CV views
+  - [ ] Full history beyond this year
 
-### Setup
+### Paper Updates
 
-```bash
-# 1. Install dependencies
-make setup
+- [ ] Daily updates
 
-# 2. Scrape today's papers
-make scrape
+### Figure Processing
 
-# 3. Start development server
-make dev
-
-# 4. Open http://localhost:3000
-```
-
-### Manual Setup
-
-If you prefer not to use Make:
-
-```bash
-# Install npm dependencies
-npm install
-
-# Create Python virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r worker/requirements.txt
-
-# Create data directories
-mkdir -p public/data public/figures
-
-# Run scraper
-python worker/scrape_arxiv.py
-
-# Start dev server
-npm run dev
-```
-
-## Usage
-
-### Scraping Papers
-
-Uses the official arXiv API for reliable data with full abstracts:
-
-```bash
-# Scrape today's papers
-make scrape
-
-# Or directly:
-python worker/scrape_arxiv.py
-
-# Scrape with options
-python worker/scrape_arxiv.py --date 2025-10-19 --max-results 500
-
-# Get all recent papers without date filtering
-python worker/scrape_arxiv.py --no-date-filter
-
-# Dry run (print to stdout without saving)
-python worker/scrape_arxiv.py --dry-run
-```
-
-### Development Commands
-
-```bash
-make dev        # Start development server
-make build      # Build for production
-make lint       # Run ESLint
-make typecheck  # Check TypeScript types
-make clean      # Remove build artifacts
-```
-
-## Tech Stack
-
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
-- **Data Pipeline**: Python (arXiv API, PyMuPDF, Google Gemini 2.5 Flash)
-- **Figure Processing**: Automated PDF extraction, ML classification, WebP conversion
-- **Persistence**: JSON files (database-ready architecture)
-- **Hosting**: Static export, CDN-ready
-
-## Architecture
-
-### Data Flow
-
-1. Python worker fetches papers from arXiv API
-2. For each paper:
-   - Downloads PDF and extracts images
-   - Uses Gemini 2.5 Flash to classify teaser and architecture figures
-   - Downsamples and converts to WebP for efficient delivery
-3. Generates JSON with paper metadata and figure URLs
-4. Next.js app loads JSON from `public/data/`
-5. Client-side filtering and keyboard navigation
-
-### Figure Extraction Pipeline
-
-The automated figure extraction process:
-
-1. **PDF Download**: Fetches PDFs from arXiv using paper IDs
-2. **Image Extraction**: Uses PyMuPDF to extract all images from PDFs with metadata
-3. **Smart Downsampling**: Images are aggressively downsampled to 512px JPEG for VLM processing (saves ~95% bandwidth)
-4. **ML Classification**: Gemini 2.5 Flash compares candidate images to select:
-   - **Teaser figure**: Best overview/method diagram (typically Figure 1)
-   - **Architecture figure**: Best technical architecture diagram (typically Figure 2)
-5. **Optimization**: Converts selected figures to WebP format with full-size (800px) and thumbnail (200px) versions
-6. **Caching**: Skips reprocessing for papers with existing figures, enabling fast daily updates
-
-### Directory Structure
-
-```
-alphascent/
-├── app/
-│   ├── cv/page.tsx              # Main paper list view
-│   ├── lib/
-│   │   ├── schema.ts            # TypeScript types
-│   │   └── loadData.ts          # Data access layer
-│   └── components/
-│       ├── PaperCard.tsx        # Accordion card with figure display
-│       ├── Filters.tsx          # Search filter with keyboard shortcuts
-│       └── useKeyboardNav.ts    # Keyboard navigation hook
-├── public/
-│   ├── data/                    # JSON paper data
-│   └── figures/                 # Extracted paper figures (WebP)
-└── worker/
-    ├── scrape_arxiv.py          # arXiv API scraper with orchestration
-    ├── extract_figures.py       # PDF download and image extraction
-    ├── classify_figures.py      # ML-based figure classification
-    └── process_figures.py       # Figure processing pipeline
-```
-
-### Future-Proofing
-
-The codebase is designed for easy database migration:
-
-- **Abstract data access**: All data fetching through `loadData.ts`
-- **Strict typing**: TypeScript types in `schema.ts`
-- **Data normalization**: Clean, validated data from scraper
-- **Environment config**: `.env.local` for configuration
-- **Independent worker**: Python scraper works standalone
-
+- [ ] Better figure extraction
+- [ ] Better figure selection
 
 ## Acknowledgments
 
-Data from [arXiv.org](https://arxiv.org). arXiv is a trademark of Cornell University.
-
-## License
-
-MIT
+Thank you to arXiv for use of its open access interoperability.
