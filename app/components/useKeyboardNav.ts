@@ -37,7 +37,7 @@ export function useKeyboardNav(totalCards: number) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [totalCards]);
 
-  return activeIndex;
+  return { activeIndex, setActiveIndex };
 }
 
 function scrollToCard(index: number) {

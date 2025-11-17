@@ -46,8 +46,9 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
   const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchScope, setSearchScope] = useState<'all' | 'current'>('all');
+  const [searchScope, setSearchScope] = useState<'all' | 'current'>('current');
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set());
   
   const [pagination, setPagination] = useState({
     page: 1,
@@ -56,7 +57,7 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
     hasMore: false,
   });
 
-  const activeIndex = useKeyboardNav(papers.length);
+  const { activeIndex, setActiveIndex } = useKeyboardNav(papers.length);
 
   useEffect(() => {
     async function loadDates() {
@@ -151,6 +152,20 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
       fetchPapers(pagination.page + 1, true);
     }
   }, [pagination, loadingMore, fetchPapers]);
+
+  const handlePaperClick = useCallback((index: number) => {
+    setActiveIndex(index);
+    setExpandedIndices(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.clear();
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  }, [setActiveIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -300,6 +315,8 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
                   key={paper.id} 
                   paper={paper}
                   isActive={index === activeIndex}
+                  isExpanded={expandedIndices.has(index)}
+                  onCardClick={() => handlePaperClick(index)}
                 />
               ))}
             </div>

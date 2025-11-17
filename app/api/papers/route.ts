@@ -101,9 +101,15 @@ export async function GET(request: NextRequest) {
     let searchQuery: string | null = null;
 
     if (search) {
-      searchQuery = search.split(/\s+/).map(term => `${term}*`).join(' ');
-      whereConditions.push(`${tableName}.rowid IN (SELECT rowid FROM ${ftsTable} WHERE ${ftsTable} MATCH ?)`);
-      bindings.push(searchQuery);
+      const terms = search.trim().split(/\s+/).filter(term => term.length > 0);
+      if (terms.length > 0) {
+        searchQuery = terms.map(term => {
+          const escaped = term.replace(/"/g, '""');
+          return `"${escaped}"*`;
+        }).join(' ');
+        whereConditions.push(`${tableName}.rowid IN (SELECT rowid FROM ${ftsTable} WHERE ${ftsTable} MATCH ?)`);
+        bindings.push(searchQuery);
+      }
       
       if (searchScope === 'current' && date) {
         whereConditions.push(`${tableName}.submitted_date = ?`);
@@ -131,7 +137,7 @@ export async function GET(request: NextRequest) {
     let papersQuery: string;
     let queryBindings: unknown[] = [];
     
-    if (search && searchQuery) {
+    if (search && searchQuery && searchQuery.trim().length > 0) {
       const ftsWhereConditions: string[] = [`${ftsTable} MATCH ?`];
       queryBindings.push(searchQuery);
       
