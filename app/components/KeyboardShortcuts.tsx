@@ -30,6 +30,8 @@ export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
       items: [
         { keys: ['j'], description: 'Navigate to next paper' },
         { keys: ['k'], description: 'Navigate to previous paper' },
+        { keys: ['↓'], description: 'Navigate to next paper' },
+        { keys: ['↑'], description: 'Navigate to previous paper' },
         { keys: ['Space'], description: 'Expand/collapse paper details' },
       ],
     },

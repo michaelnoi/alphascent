@@ -14,6 +14,7 @@ export function useKeyboardNav(totalCards: number) {
 
       switch (e.key) {
         case 'j':
+        case 'ArrowDown':
           e.preventDefault();
           setActiveIndex(prev => {
             const next = Math.min(prev + 1, totalCards - 1);
@@ -23,6 +24,7 @@ export function useKeyboardNav(totalCards: number) {
           break;
         
         case 'k':
+        case 'ArrowUp':
           e.preventDefault();
           setActiveIndex(prev => {
             const next = Math.max(prev - 1, 0);
