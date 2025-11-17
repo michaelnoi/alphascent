@@ -23,6 +23,14 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
     description: 'Human-Computer Interaction',
     tableName: 'papers_cs_hc',
     protected: true
+  },
+  'GR': {
+    id: 'cs.GR',
+    slug: 'GR',
+    displayName: 'Graphics',
+    description: 'Computer Science - Graphics',
+    tableName: 'papers_cs_gr',
+    protected: false
   }
 };
 
