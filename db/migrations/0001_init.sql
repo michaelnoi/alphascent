@@ -1,5 +1,5 @@
 -- AlphaScent Database Schema
--- Migration 0001: Initial schema with papers, figures, FTS5 search, and access keys
+-- Migration 0001: Initial schema with figures and access keys
 
 -- ============================================================================
 -- Figures Table (shared across all categories)
