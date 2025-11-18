@@ -49,6 +49,7 @@ export function SearchBar({ onSearchChange, initialQuery = '', initialScope = 'c
   const [query, setQuery] = useState(initialQuery);
   const [scope, setScope] = useState<'all' | 'current'>(initialScope);
   const [showInfo, setShowInfo] = useState(false);
+  const [hoverInfo, setHoverInfo] = useState(false);
   const infoRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
@@ -152,7 +153,12 @@ export function SearchBar({ onSearchChange, initialQuery = '', initialScope = 'c
         )}
       </div>
       
-      <div className="relative" ref={infoRef}>
+      <div 
+        className="relative" 
+        ref={infoRef}
+        onMouseEnter={() => setHoverInfo(true)}
+        onMouseLeave={() => setHoverInfo(false)}
+      >
         <button
           onClick={() => setShowInfo(!showInfo)}
           className="p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-lg hover:bg-gray-50"
@@ -161,7 +167,7 @@ export function SearchBar({ onSearchChange, initialQuery = '', initialScope = 'c
         >
           <Info className="w-4 h-4" />
         </button>
-        <SearchInfoPopup isOpen={showInfo} onClose={() => setShowInfo(false)} />
+        <SearchInfoPopup isOpen={showInfo || hoverInfo} onClose={() => setShowInfo(false)} />
       </div>
       
       <button

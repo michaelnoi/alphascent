@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { PaperCard, type PaperFromAPI } from '@/app/components/PaperCard';
 import { SearchBar } from '@/app/components/SearchBar';
 import { DatePicker } from '@/app/components/DatePicker';
 import { useKeyboardNav } from '@/app/components/useKeyboardNav';
 import { KeyboardShortcuts } from '@/app/components/KeyboardShortcuts';
-import { Keyboard } from 'lucide-react';
+import { Keyboard, ChevronDown } from 'lucide-react';
+import { getAllCategories } from '@/app/lib/categories';
 
 interface DateInfo {
   date: string;
@@ -36,6 +38,7 @@ interface CategoryPageProps {
 }
 
 export default function CategoryPage({ category, displayName }: CategoryPageProps) {
+  const router = useRouter();
   const [papers, setPapers] = useState<PaperFromAPI[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +52,8 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
   const [searchScope, setSearchScope] = useState<'all' | 'current'>('current');
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set());
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
   
   const [pagination, setPagination] = useState({
     page: 1,
@@ -58,6 +63,8 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
   });
 
   const { activeIndex, setActiveIndex } = useKeyboardNav(papers.length);
+  
+  const categories = getAllCategories();
 
   useEffect(() => {
     async function loadDates() {
@@ -168,6 +175,19 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
   }, [setActiveIndex]);
 
   useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+
+    if (showCategoryDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showCategoryDropdown]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
@@ -187,6 +207,11 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleLoadMore]);
+
+  const handleCategorySelect = (categorySlug: string) => {
+    setShowCategoryDropdown(false);
+    router.push(`/${categorySlug.toLowerCase()}`);
+  };
 
   const progressPercent = papers.length > 0 ? Math.round(((activeIndex + 1) / papers.length) * 100) : 0;
 
@@ -246,10 +271,31 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
                   AlphaScent
                 </h1>
-                <p className="text-xs text-gray-500 flex items-center gap-2">
-                  <span className="inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-                  {category} papers
-                </p>
+                <div className="relative" ref={categoryDropdownRef}>
+                  <button
+                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                    className="text-xs text-gray-500 flex items-center gap-2 hover:text-gray-700 transition-colors"
+                  >
+                    <span className="inline-block w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                    {category} papers
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  {showCategoryDropdown && (
+                    <div className="absolute top-full left-0 mt-1 z-50 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[180px] py-1">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.slug}
+                          onClick={() => handleCategorySelect(cat.slug)}
+                          className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 transition-colors ${
+                            cat.id === category ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700'
+                          }`}
+                        >
+                          {cat.id} - {cat.displayName}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="flex items-center gap-1 text-xs text-gray-600 bg-white/70 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-2">
