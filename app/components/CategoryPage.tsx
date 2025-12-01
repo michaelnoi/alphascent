@@ -215,45 +215,12 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
 
   const progressPercent = papers.length > 0 ? Math.round(((activeIndex + 1) / papers.length) * 100) : 0;
 
-  if (loading && papers.length === 0) {
+  if (loading && papers.length === 0 && availableDates.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
           <div className="text-sm text-gray-500">Loading papers...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && papers.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="text-base font-semibold text-gray-900 mb-2">Error loading papers</div>
-          <div className="text-sm text-gray-600">{error}</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!loading && availableDates.length === 0 && papers.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
-          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <div className="text-base font-semibold text-gray-900 mb-2">No papers yet</div>
-          <div className="text-sm text-gray-600 mb-4">The database is empty. Add papers.</div>
-          <div className="text-xs text-gray-500">API is working correctly - waiting for data.</div>
         </div>
       </div>
     );
@@ -349,7 +316,39 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
       </div>
       
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
-        {papers.length === 0 ? (
+        {loading && papers.length === 0 ? (
+          <div className="min-h-[50vh] flex items-center justify-center">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
+              <div className="text-sm text-gray-500">Loading papers...</div>
+            </div>
+          </div>
+        ) : error && papers.length === 0 ? (
+          <div className="min-h-[50vh] flex items-center justify-center">
+            <div className="text-center max-w-md bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="text-base font-semibold text-gray-900 mb-2">Error loading papers</div>
+              <div className="text-sm text-gray-600">{error}</div>
+            </div>
+          </div>
+        ) : !loading && availableDates.length === 0 && papers.length === 0 ? (
+          <div className="min-h-[50vh] flex items-center justify-center">
+            <div className="text-center max-w-md bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div className="text-base font-semibold text-gray-900 mb-2">No papers yet</div>
+              <div className="text-sm text-gray-600 mb-4">The database is empty. Add papers.</div>
+              <div className="text-xs text-gray-500">API is working correctly - waiting for data.</div>
+            </div>
+          </div>
+        ) : papers.length === 0 ? (
           <div className="text-center py-20 text-gray-400 text-sm">
             No papers found
           </div>

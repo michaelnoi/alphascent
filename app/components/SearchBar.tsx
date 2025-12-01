@@ -145,6 +145,7 @@ export function SearchBar({ onSearchChange, initialQuery = '', initialScope = 'c
         {query && (
           <button
             onClick={handleClear}
+            onMouseDown={(e) => e.preventDefault()}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
             aria-label="Clear search"
           >
@@ -161,6 +162,7 @@ export function SearchBar({ onSearchChange, initialQuery = '', initialScope = 'c
       >
         <button
           onClick={() => setShowInfo(!showInfo)}
+          onMouseDown={(e) => e.preventDefault()}
           className="p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-lg hover:bg-gray-50"
           aria-label="Search information"
           title="Search information"
@@ -172,6 +174,7 @@ export function SearchBar({ onSearchChange, initialQuery = '', initialScope = 'c
       
       <button
         onClick={toggleScope}
+        onMouseDown={(e) => e.preventDefault()}
         className={`
           px-3 py-2 rounded-lg text-xs font-medium transition-all shadow-sm border
           ${scope === 'all' 
