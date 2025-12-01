@@ -71,21 +71,26 @@ export interface D1Database {
 
 export type D1Session = D1Database & { getBookmark(): string | null };
 
-export async function createSession(db: D1Database, bookmark: string | null, source: string): Promise<D1Session> {
+export async function createSession(db: D1Database, bookmark: string | null, source: string): Promise<{ session: D1Session, region?: string, isPrimary?: boolean }> {
   const session = db.withSession(bookmark ?? "first-unconstrained");
+  let region: string | undefined;
+  let isPrimary: boolean | undefined;
   
   // Diagnostic check
   try {
     const check = await session.prepare('select 1').run();
+    region = check.meta.served_by_region;
+    isPrimary = check.meta.served_by_primary;
+    
     console.log(`D1 Session (${source}):`, {
-      servedByRegion: check.meta.served_by_region,
-      servedByPrimary: check.meta.served_by_primary,
+      servedByRegion: region,
+      servedByPrimary: isPrimary,
     });
   } catch (e) {
     console.error(`Failed to run D1 session check (${source}):`, e);
   }
   
-  return session;
+  return { session, region, isPrimary };
 }
 
 export interface D1PreparedStatement {

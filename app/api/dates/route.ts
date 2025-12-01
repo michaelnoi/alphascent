@@ -19,11 +19,16 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   
   let session: D1Session | null = null;
+  let sessionMeta: { region?: string, isPrimary?: boolean } = {};
 
   try {
     const dbRaw = getDB();
     const bookmark = request.headers.get("x-d1-bookmark");
-    session = await createSession(dbRaw, bookmark, 'Dates API');
+    
+    const sessionResult = await createSession(dbRaw, bookmark, 'Dates API');
+    session = sessionResult.session;
+    sessionMeta = { region: sessionResult.region, isPrimary: sessionResult.isPrimary };
+    
     const db = session;
     
     if (!category) {
@@ -54,6 +59,8 @@ export async function GET(request: NextRequest) {
     const jsonResponse = NextResponse.json(response);
     if (session) {
       jsonResponse.headers.set("x-d1-bookmark", session.getBookmark() ?? "first-unconstrained");
+      if (sessionMeta.region) jsonResponse.headers.set("x-d1-region", sessionMeta.region);
+      if (sessionMeta.isPrimary !== undefined) jsonResponse.headers.set("x-d1-primary", String(sessionMeta.isPrimary));
     }
     return jsonResponse;
   } catch (error) {

@@ -69,12 +69,17 @@ function transformPaper(paper: Paper, figures: Figure[], r2BaseUrl: string) {
 
 export async function GET(request: NextRequest) {
   let session: D1Session | null = null;
+  let sessionMeta: { region?: string, isPrimary?: boolean } = {};
   
   try {
     const { searchParams } = new URL(request.url);
     const dbRaw = getDB();
     const bookmark = request.headers.get("x-d1-bookmark");
-    session = await createSession(dbRaw, bookmark, 'Papers API');
+    
+    const sessionResult = await createSession(dbRaw, bookmark, 'Papers API');
+    session = sessionResult.session;
+    sessionMeta = { region: sessionResult.region, isPrimary: sessionResult.isPrimary };
+    
     const db = session;
 
     const env = getEnv();
@@ -201,6 +206,8 @@ export async function GET(request: NextRequest) {
       });
       if (session) {
         response.headers.set("x-d1-bookmark", session.getBookmark() ?? "first-unconstrained");
+        if (sessionMeta.region) response.headers.set("x-d1-region", sessionMeta.region);
+        if (sessionMeta.isPrimary !== undefined) response.headers.set("x-d1-primary", String(sessionMeta.isPrimary));
       }
       return response;
     }
@@ -241,6 +248,8 @@ export async function GET(request: NextRequest) {
     const jsonResponse = NextResponse.json(response);
     if (session) {
       jsonResponse.headers.set("x-d1-bookmark", session.getBookmark() ?? "first-unconstrained");
+      if (sessionMeta.region) jsonResponse.headers.set("x-d1-region", sessionMeta.region);
+      if (sessionMeta.isPrimary !== undefined) jsonResponse.headers.set("x-d1-primary", String(sessionMeta.isPrimary));
     }
     return jsonResponse;
   } catch (error) {

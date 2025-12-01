@@ -115,6 +115,15 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
       const res = await fetch(`/api/papers?${params}`);
       if (!res.ok) throw new Error(`Failed to fetch papers: ${res.status}`);
       
+      const region = res.headers.get('x-d1-region');
+      const primary = res.headers.get('x-d1-primary');
+      
+      if (region || primary) {
+        console.log(`D1 Session Info - Region: ${region}, Primary: ${primary}`);
+      } else {
+        console.log('D1 Session Info - No replication metadata available.');
+      }
+      
       const data: PapersResponse = await res.json();
       
       if (append) {
