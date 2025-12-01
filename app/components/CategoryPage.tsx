@@ -142,7 +142,9 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
   const handleSearchChange = useCallback((query: string, scope: 'all' | 'current') => {
     setSearchQuery(query);
     setSearchScope(scope);
-  }, []);
+    setActiveIndex(-1);
+    setExpandedIndices(new Set());
+  }, [setActiveIndex]);
 
   const handleDateSelect = useCallback((date: string | null) => {
     setSelectedDate(date);
