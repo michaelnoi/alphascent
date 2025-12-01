@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB, getEnv, Paper, Figure, PaperWithFigures } from '@/app/lib/db';
+import { getDB, getEnv, Paper, Figure, PaperWithFigures, D1Session, createSession } from '@/app/lib/db';
 import { getCategoryTable, getFTSTable, isValidCategory } from '@/app/lib/categoryHelpers';
 
 export const runtime = 'edge';
@@ -68,9 +68,15 @@ function transformPaper(paper: Paper, figures: Figure[], r2BaseUrl: string) {
 }
 
 export async function GET(request: NextRequest) {
+  let session: D1Session | null = null;
+  
   try {
     const { searchParams } = new URL(request.url);
-    const db = getDB();
+    const dbRaw = getDB();
+    const bookmark = request.headers.get("x-d1-bookmark");
+    session = await createSession(dbRaw, bookmark, 'Papers API');
+    const db = session;
+
     const env = getEnv();
     
     const r2BaseUrl = env.R2_BUCKET_URL || process.env.R2_BUCKET_URL || '';
@@ -177,7 +183,7 @@ export async function GET(request: NextRequest) {
     const papers = papersResult.results || [];
 
     if (papers.length === 0) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         papers: [],
         pagination: {
           page,
@@ -193,6 +199,10 @@ export async function GET(request: NextRequest) {
           searchScope: searchScope || undefined,
         },
       });
+      if (session) {
+        response.headers.set("x-d1-bookmark", session.getBookmark() ?? "first-unconstrained");
+      }
+      return response;
     }
 
     const paperIds = papers.map(p => p.id);
@@ -228,7 +238,11 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    return NextResponse.json(response);
+    const jsonResponse = NextResponse.json(response);
+    if (session) {
+      jsonResponse.headers.set("x-d1-bookmark", session.getBookmark() ?? "first-unconstrained");
+    }
+    return jsonResponse;
   } catch (error) {
     console.error('Papers API error:', error);
     return NextResponse.json(

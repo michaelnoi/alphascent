@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB } from '@/app/lib/db';
+import { getDB, D1Session, createSession } from '@/app/lib/db';
 import { getCategoryTable, isValidCategory } from '@/app/lib/categoryHelpers';
 
 export const runtime = 'edge';
@@ -18,8 +18,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
   
+  let session: D1Session | null = null;
+
   try {
-    const db = getDB();
+    const dbRaw = getDB();
+    const bookmark = request.headers.get("x-d1-bookmark");
+    session = await createSession(dbRaw, bookmark, 'Dates API');
+    const db = session;
     
     if (!category) {
       return NextResponse.json({ error: 'category parameter required' }, { status: 400 });
@@ -46,7 +51,11 @@ export async function GET(request: NextRequest) {
       accessible_dates: null,
     };
 
-    return NextResponse.json(response);
+    const jsonResponse = NextResponse.json(response);
+    if (session) {
+      jsonResponse.headers.set("x-d1-bookmark", session.getBookmark() ?? "first-unconstrained");
+    }
+    return jsonResponse;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;

@@ -66,6 +66,26 @@ export interface D1Database {
   prepare(query: string): D1PreparedStatement;
   batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
   exec(query: string): Promise<D1ExecResult>;
+  withSession(token: string): D1Session;
+}
+
+export type D1Session = D1Database & { getBookmark(): string | null };
+
+export async function createSession(db: D1Database, bookmark: string | null, source: string): Promise<D1Session> {
+  const session = db.withSession(bookmark ?? "first-unconstrained");
+  
+  // Diagnostic check
+  try {
+    const check = await session.prepare('select 1').run();
+    console.log(`D1 Session (${source}):`, {
+      servedByRegion: check.meta.served_by_region,
+      servedByPrimary: check.meta.served_by_primary,
+    });
+  } catch (e) {
+    console.error(`Failed to run D1 session check (${source}):`, e);
+  }
+  
+  return session;
 }
 
 export interface D1PreparedStatement {
@@ -82,6 +102,8 @@ export interface D1Result<T = unknown> {
     duration: number;
     rows_read: number;
     rows_written: number;
+    served_by_region?: string;
+    served_by_primary?: boolean;
   };
 }
 
