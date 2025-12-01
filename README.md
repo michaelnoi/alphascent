@@ -6,14 +6,15 @@ A figure-first interface for computer science research papers from arXiv, live a
 
 AlphaScent displays arXiv papers with automatically extracted figures shown inline. All data comes from arXiv, and dates shown are **submitted dates** (not announcement dates).
 
-**Important Disclaimer**: Papers displayed here may not be the most up-to-date versions. Always check the actual arXiv abstract/PDF view for the latest version. Note that many published papers don't update their arXiv submissions with camera-ready versions from conferences/journals, so always verify you're viewing the most current version.
+**Important Disclaimer**: Papers displayed here may not be the most up-to-date versions. Always check the actual arXiv abstract/PDF view for the latest version. Note that many published papers don't update their arXiv submissions with camera-ready versions from conferences/journals, so always verify you're viewing the most recent version.
 
 ### Categories
 
-Currently, AlphaScent supports two categories:
+Currently, AlphaScent supports three categories for now:
 
-- **Computer Vision ([alphascent.org/cv](https://alphascent.org/cv))**: Contains papers from this year (2025) only
-- **Human-Computer Interaction ([alphascent.org/hc](https://alphascent.org/hc))**: Contains **all historical papers** submitted to arXiv in the cs.HC category. Currently access-controlled for a user study (requires authentication token).
+- **Computer Vision ([alphascent.org/cv](https://alphascent.org/cv))**
+- **Human-Computer Interaction ([alphascent.org/hc](https://alphascent.org/hc))**
+- **Graphics ([alphascent.org/gr](https://alphascent.org/gr))**
 
 ## Design Philosophy
 
@@ -28,8 +29,8 @@ Currently, AlphaScent supports two categories:
 
 | Key | Action |
 |-----|--------|
-| <kbd>j</kbd> | Navigate to next paper |
-| <kbd>k</kbd> | Navigate to previous paper |
+| <kbd>j</kbd> / <kbd>↓</kbd> | Navigate to next paper |
+| <kbd>k</kbd> / <kbd>↑</kbd> | Navigate to previous paper |
 | <kbd>Space</kbd> | Expand/collapse paper details |
 
 ### Search
@@ -49,6 +50,13 @@ Currently, AlphaScent supports two categories:
 | <kbd>o</kbd> | Open code repository (if available) |
 | <kbd>p</kbd> | Open project page (if available) |
 | <kbd>Shift</kbd> + <kbd>u</kbd>/<kbd>i</kbd>/<kbd>o</kbd>/<kbd>p</kbd> | Open in new tab (otherwise navigates in same tab) |
+
+### Figures
+
+| Key | Action |
+|-----|--------|
+| <kbd>f</kbd> | View first figure (expanded view only) |
+| <kbd>s</kbd> | View second figure (expanded view only) |
 
 ### Content
 
@@ -82,9 +90,10 @@ For development setup, deployment, and technical details, see [SETUP.md](SETUP.m
 
 ### Category Views
 
-- [x] HC views (all historical papers, access controlled)
+- [x] HC views
 - [x] CV views
-  - [ ] Full history beyond this year
+- [x] GR views
+  - [x] Full history beyond this year
 
 ### Paper Updates
 

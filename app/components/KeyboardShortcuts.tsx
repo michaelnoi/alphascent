@@ -54,6 +54,13 @@ export function KeyboardShortcuts({ isOpen, onClose }: KeyboardShortcutsProps) {
       ],
     },
     {
+      category: 'Figures',
+      items: [
+        { keys: ['f'], description: 'View first figure (expanded view only)' },
+        { keys: ['s'], description: 'View second figure (expanded view only)' },
+      ],
+    },
+    {
       category: 'Content',
       items: [
         { keys: ['⇧', 'M'], description: 'Load more papers' },
