@@ -177,9 +177,9 @@ export function PaperCard({ paper, isActive = false, isExpanded = false, onCardC
           role="button"
           aria-expanded={true}
         >
-          <div className="p-6 h-[75vh] flex flex-col overflow-hidden bg-orange-50/40">
-            <div className="flex gap-6 flex-shrink-0 mb-4 pb-4 border-b border-indigo-100/30">
-              <div className="w-48 h-36 bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100/50 rounded-xl flex-shrink-0 flex items-center justify-center shadow-inner overflow-hidden">
+          <div className="p-4 md:p-6 h-auto md:h-[75vh] flex flex-col overflow-visible md:overflow-hidden bg-orange-50/40">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 flex-shrink-0 mb-4 pb-4 border-b border-indigo-100/30">
+              <div className="w-full md:w-48 h-48 md:h-36 bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100/50 rounded-xl flex-shrink-0 flex items-center justify-center shadow-inner overflow-hidden">
                 {firstFigure?.thumb ? (
                   <Image 
                     src={firstFigure.thumb} 
@@ -260,7 +260,7 @@ export function PaperCard({ paper, isActive = false, isExpanded = false, onCardC
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 mb-4 overflow-x-hidden">
+            <div className="overflow-visible md:flex-1 md:overflow-y-auto md:min-h-0 mb-4 overflow-x-hidden">
               <p className="text-[15px] text-gray-700 leading-relaxed mb-5 font-serif-abstract break-words">
                 {paper.abstract}
               </p>
@@ -369,7 +369,7 @@ export function PaperCard({ paper, isActive = false, isExpanded = false, onCardC
               )}
             </div>
 
-            <p className="text-[13px] text-gray-600 line-clamp-2 leading-relaxed font-serif-abstract">
+            <p className="text-[13px] text-gray-600 line-clamp-2 leading-relaxed font-serif-abstract hidden md:block">
               {abstractPreview}
             </p>
           </div>
