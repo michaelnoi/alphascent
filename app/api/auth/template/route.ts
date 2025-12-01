@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
     const updateQuery = `
       UPDATE access_keys 
       SET last_used_at = CURRENT_TIMESTAMP,
-          last_used_ip = ?,
-          request_count = request_count + 1
+      last_used_ip = ?,
+      request_count = request_count + 1
       WHERE id = ?
     `;
     
@@ -77,7 +77,8 @@ export async function POST(request: NextRequest) {
       user_name: result.user_name 
     });
     
-    response.cookies.set('hc_access_token', keyHash, {
+    // NOTE: Update cookie name if needed
+    response.cookies.set('template_access_token', keyHash, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -94,4 +95,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

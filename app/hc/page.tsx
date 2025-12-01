@@ -1,64 +1,7 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { getDB } from '@/app/lib/db';
+'use client';
+
 import CategoryPage from '@/app/components/CategoryPage';
 
-export const runtime = 'edge';
-
-async function validateToken(keyHash: string): Promise<boolean> {
-  try {
-    const db = getDB();
-    
-    const result = await db
-      .prepare('SELECT id, expires_at, is_revoked FROM access_keys WHERE key_hash = ?')
-      .bind(keyHash)
-      .first<{
-        id: string;
-        expires_at: string | null;
-        is_revoked: number;
-      }>();
-    
-    if (!result) {
-      return false;
-    }
-    
-    if (result.is_revoked) {
-      return false;
-    }
-    
-    if (result.expires_at) {
-      const expiresAtStr = String(result.expires_at).trim();
-      if (expiresAtStr) {
-        const expiryDate = new Date(expiresAtStr);
-        if (isNaN(expiryDate.getTime())) {
-          return false;
-        }
-        const now = new Date();
-        if (expiryDate <= now) {
-          return false;
-        }
-      }
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Token validation error:', error);
-    return false;
-  }
-}
-
-export default async function HCPage() {
-  const cookieStore = await cookies();
-  const keyHash = cookieStore.get('hc_access_token')?.value;
-  
-  if (!keyHash) {
-    redirect('/hc/auth');
-  }
-  
-  const isValid = await validateToken(keyHash);
-  if (!isValid) {
-    redirect('/hc/auth');
-  }
-  
+export default function HCPage() {
   return <CategoryPage category="cs.HC" displayName="Human-Computer Interaction" />;
 }

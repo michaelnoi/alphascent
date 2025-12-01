@@ -22,7 +22,7 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
     displayName: 'Human-Computer Interaction',
     description: 'Human-Computer Interaction',
     tableName: 'papers_cs_hc',
-    protected: true
+    protected: false
   },
   'GR': {
     id: 'cs.GR',

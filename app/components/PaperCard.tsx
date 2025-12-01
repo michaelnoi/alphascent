@@ -169,7 +169,7 @@ export function PaperCard({ paper, isActive = false, isExpanded = false, onCardC
           className={`
             border rounded-xl mb-3 cursor-pointer transition-all duration-200 shadow-sm
             hover:shadow-md overflow-hidden scroll-mt-20
-            ${isActive ? 'ring-4 ring-indigo-500 border-indigo-400 shadow-xl bg-orange-50/60 scale-[1.04]' : 'border-gray-200'}
+            ${isActive ? 'ring-4 ring-indigo-500 border-indigo-400 shadow-xl bg-orange-50/60 scale-[1.02]' : 'border-gray-200'}
           `}
           onClick={handleClick}
           onKeyDown={handleKeyDown}

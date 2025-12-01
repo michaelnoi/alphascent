@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export const runtime = 'edge';
 
-export default function HCAuthPage() {
+export default function LockedTemplateAuthPage() {
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,8 @@ export default function HCAuthPage() {
     setLoading(true);
     
     try {
-      const res = await fetch('/api/auth/hc', {
+      // NOTE: Update this URL to point to your new locked category's auth API
+      const res = await fetch('/api/auth/template', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -26,7 +27,8 @@ export default function HCAuthPage() {
       const data = await res.json();
       
       if (res.ok) {
-        router.push('/hc');
+        // NOTE: Update this path to your new locked category's page
+        router.push('/locked-template');
         router.refresh();
       } else {
         setError(data.error || 'Invalid token');
@@ -42,13 +44,13 @@ export default function HCAuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 mx-4">
         <div className="mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-gray-500 to-slate-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">HC Beta Access</h1>
-          <p className="text-gray-600 text-center text-sm">Enter your access token to view HCI papers.</p>
+          <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">Restricted Access</h1>
+          <p className="text-gray-600 text-center text-sm">Enter your access token to view this category.</p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -62,7 +64,7 @@ export default function HCAuthPage() {
               value={token}
               onChange={(e) => setToken(e.target.value)}
               placeholder="Enter your token"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
               required
               disabled={loading}
             />
@@ -77,7 +79,7 @@ export default function HCAuthPage() {
           <button
             type="submit"
             disabled={loading || !token}
-            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-3 rounded-lg font-medium hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+            className="w-full bg-gradient-to-r from-gray-600 to-slate-600 text-white py-3 rounded-lg font-medium hover:from-gray-700 hover:to-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -85,7 +87,7 @@ export default function HCAuthPage() {
                 Validating...
               </span>
             ) : (
-              'Access HC Papers'
+              'Access Content'
             )}
           </button>
         </form>
@@ -99,4 +101,3 @@ export default function HCAuthPage() {
     </div>
   );
 }
-
