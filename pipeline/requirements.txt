@@ -1,0 +1,17 @@
+# arXiv fetching
+requests>=2.31.0
+pytz>=2024.1
+
+# PDF processing
+PyMuPDF>=1.23.0
+Pillow>=10.0.0
+
+# Cloudflare
+boto3>=1.34.0
+
+# env
+python-dotenv>=1.0.0
+
+# misc
+tyro>=0.8.4
+tqdm>=4.66.0
