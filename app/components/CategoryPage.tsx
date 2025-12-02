@@ -44,6 +44,9 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   
+  // State for D1 Read Replication Bookmark
+  const [d1Bookmark, setD1Bookmark] = useState<string | null>(null);
+  
   const [availableDates, setAvailableDates] = useState<DateInfo[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null);
@@ -69,7 +72,17 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
   useEffect(() => {
     async function loadDates() {
       try {
-        const res = await fetch(`/api/dates?category=${encodeURIComponent(category)}`);
+        const headers: Record<string, string> = {};
+        if (d1Bookmark) headers['x-d1-bookmark'] = d1Bookmark;
+
+        const res = await fetch(`/api/dates?category=${encodeURIComponent(category)}`, {
+          headers
+        });
+        
+        // Update bookmark from response if present
+        const newBookmark = res.headers.get('x-d1-bookmark');
+        if (newBookmark) setD1Bookmark(newBookmark);
+
         if (!res.ok) throw new Error('Failed to fetch dates');
         const data = await res.json();
         setAvailableDates(data.dates);
@@ -108,12 +121,22 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
       if (dateRange) {
         params.set('from', dateRange.from);
         params.set('to', dateRange.to);
-      } else if (selectedDate) {
+      } else       if (selectedDate) {
         params.set('date', selectedDate);
       }
 
-      const res = await fetch(`/api/papers?${params}`);
+      const headers: Record<string, string> = {};
+      if (d1Bookmark) headers['x-d1-bookmark'] = d1Bookmark;
+
+      const res = await fetch(`/api/papers?${params}`, {
+        headers
+      });
+
       if (!res.ok) throw new Error(`Failed to fetch papers: ${res.status}`);
+      
+      // Update bookmark from response if present
+      const newBookmark = res.headers.get('x-d1-bookmark');
+      if (newBookmark) setD1Bookmark(newBookmark);
       
       const region = res.headers.get('x-d1-region');
       const primary = res.headers.get('x-d1-primary');
@@ -140,7 +163,7 @@ export default function CategoryPage({ category, displayName }: CategoryPageProp
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [category, selectedDate, dateRange, searchQuery, searchScope, pagination.limit]);
+  }, [category, selectedDate, dateRange, searchQuery, searchScope, pagination.limit, d1Bookmark]);
 
   useEffect(() => {
     if (selectedDate || dateRange) {
