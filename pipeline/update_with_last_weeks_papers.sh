@@ -35,8 +35,9 @@ for SUBCAT in "cs.CV" "cs.HC" "cs.GR"; do
     echo ""
     echo "Step 3: Uploading papers to D1..."
     python pipeline/db_util/upload_to_d1.py --db "pipeline/filtered_${CATEGORY}_${SUB_SUFFIX}.db" --category "$SUBCAT"
+done
 
-    # Step 5: Extract figures -> might not capture all missing figures with 15000 limit
-    echo ""
-    echo "Step 4: Extracting figures..."
-    python pipeline/figure_extraction/extract_figures_batch.py --category "$SUBCAT" --max-count 15000 --workers 1
+    # # Step 5: Extract figures -> might not capture all missing figures with 15000 limit
+    # echo ""
+    # echo "Step 4: Extracting figures..."
+    # python pipeline/figure_extraction/extract_figures_batch.py --category "$SUBCAT" --max-count 15000 --workers 1
